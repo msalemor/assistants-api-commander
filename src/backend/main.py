@@ -109,7 +109,7 @@ def post_process(request: PromptRequest):
         raise HTTPException(
             status_code=404, detail=f"thread not found for user {request.userName}")
 
-    return playground.process_prompt(client, assistant, thread, request.prompt, settings.email_URI)
+    return playground.process_prompt(client, assistant, thread, request.prompt, settings.email_URI, request.userName)
 
 
 @app.delete("/api/delete")

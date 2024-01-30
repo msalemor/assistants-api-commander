@@ -1,5 +1,6 @@
 import { makePersisted } from '@solid-primitives/storage'
 import axios from 'axios'
+import { IoInformationCircleOutline } from 'solid-icons/io'
 import { For, createSignal } from 'solid-js'
 import { SolidMarkdown } from 'solid-markdown'
 import { Spinner, SpinnerType } from 'solid-spinner'
@@ -7,8 +8,8 @@ import { Spinner, SpinnerType } from 'solid-spinner'
 // import viteLogo from '/vite.svg'
 //import './App.css'
 
-//const BaseURL = '/api/'
-const BaseURL = 'http://127.0.0.1:8000/api/'
+const BaseURL = '/api/'
+//const BaseURL = 'http://127.0.0.1:8000/api/'
 const POST_CREATE = BaseURL + 'create'
 const POST_PROCESS = BaseURL + 'process'
 const GET_STATUS = BaseURL + 'status?userName={name}'
@@ -22,10 +23,10 @@ interface ISettings {
 }
 
 const Settings = {
-  user: 'user@email.com',
-  name: 'CSV Assistant',
-  instructions: 'You are an Assistant that can help analyze and perform calculations using the provided file(s). You are polite and friendly. After answering the user\'s, say, "Can I be of further assistance."',
-  files: 'https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv',
+  user: '',
+  name: '',
+  instructions: '',
+  files: '',
 }
 
 interface IRunningAssistant {
@@ -75,7 +76,7 @@ interface IResponseMessage {
 function App() {
   const [settings, setSettings] = makePersisted(createSignal<ISettings>(Settings))
   const [runningAssistant, setRunningAssistant] = createSignal<IRunningAssistant>(RunningAssistant)
-  const [threadMessages, setThreadMessages] = createSignal<IThreadMessage[]>([])
+  const [threadMessages, setThreadMessages] = makePersisted(createSignal<IThreadMessage[]>([]))
   const [prompt, setPrompt] = createSignal<string>('')
   const [processing, setProcessing] = createSignal<boolean>(false)
 
@@ -158,6 +159,7 @@ function App() {
       const response = await axios.delete(DELETE_ASSISTANT.replace('{name}', settings().user))
       console.log(response)
       setPrompt('')
+      setSettings({ ...settings(), user: '', name: '', instructions: '', files: '' })
       setThreadMessages([])
       setRunningAssistant({ ...runningAssistant(), assistant_id: '', thread_id: '', files: [] })
     }
@@ -171,13 +173,13 @@ function App() {
 
   const LoadSampleData = () => {
     const sampleSettings: ISettings = {
-      user: 'user@email.com',
-      name: 'Personalized Assistant',
+      user: '',
+      name: 'Personal Assistant',
       instructions: 'You are an Assistant that can help analyze and perform calculations on the provided data file(s). Use only the provided data. Be polite, friendly, and helpful. After answering a user\'s question, say, "Can I be of further assistance."',
       files: 'https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv',
     }
     setSettings({ ...settings(), ...sampleSettings })
-    setPrompt('Generate a chart of the latest MSFT, APPL, TSLA and NVDIA stock prices?')
+    setPrompt('What is the latest Microsoft, Apple, Tesla, and NVIDIA stock prices?')
   }
 
   const StatusBarColor = () => {
@@ -197,46 +199,48 @@ function App() {
         <aside class="bg-slate-200 p-2 w-1/4 overflow-auto">
           <div class="flex flex-col p-3 space-y-2">
             <label class="uppercase font-bold border-b-2 border-slate-800 text-lg">Assistant Settings</label>
-            <label class="uppercase font-semibold">User</label>
+            <label class="uppercase font-semibold">Email Address:</label>
             <input class='p-1 outline-none' type="email"
               onchange={(e) => setSettings({ ...settings(), user: e.target.value })}
               value={settings().user}
             />
-            <label class="uppercase font-semibold">Assistant Name</label>
+            <label class="uppercase font-semibold">Assistant Name:</label>
             <input class='p-1 outline-none' type="text"
               onchange={(e) => setSettings({ ...settings(), name: e.target.value })}
               value={settings().name}
             />
-            <label class="uppercase font-semibold">Instructions</label>
+            <label class="uppercase font-semibold">Instructions:</label>
             <textarea class='p-1 outline-none'
               rows={5}
               onchange={(e) => setSettings({ ...settings(), instructions: e.target.value })}
               value={settings().instructions}
             />
-            <label class="uppercase font-semibold">Files URLs</label>
+            <div class='flex flex-row space-x-2 w-100'><label class="uppercase font-semibold">Files URLs: <span><IoInformationCircleOutline title='You can provide a comma separated list of files.' /></span></label></div>
             <textarea
               class='p-1 outline-none'
               rows={5}
               onchange={(e) => setSettings({ ...settings(), files: e.target.value })}
               value={settings().files}
             />
-            <span class='bg-yellow-200 text-black p-2'><strong>Note: </strong>You can provide a comma separated list of files.</span>
           </div>
           <div class="flex flex-row space-x-2 p-3">
-            <button class='w-20 p-2 bg-blue-700 text-white font-semibold'
+            <button class='w-20 p-2 bg-blue-700 text-white font-semibold disabled:bg-slate-500'
               onclick={CreateAssistant}
+              disabled={runningAssistant().assistant_id !== ''}
             >Create</button>
-            <button class='w-20 p-2 bg-blue-700 text-white font-semibold'
+            <button class='w-20 p-2 bg-blue-700 text-white font-semibold disabled:bg-slate-500'
               onclick={DeleteAssistant}
+              disabled={runningAssistant().assistant_id === ''}
             >Delete</button>
-            <button class='w-20 p-2 bg-blue-700 text-white font-semibold'
+            <button class='w-20 p-2 bg-blue-700 text-white font-semibold disabled:bg-slate-500'
               onclick={LoadSampleData}
+              disabled={runningAssistant().assistant_id !== ''}
             >Sample</button>
           </div>
           <div class="flex flex-col p-3 space-y-2">
             <label class="uppercase font-bold border-b-2 border-slate-800 text-lg">Available Tools</label>
-            <span class='bg-blue-700 text-white rounded-xl p-1 w-24'>Stock Prices</span>
-            <span class='bg-blue-700 text-white rounded-xl p-1 w-24'>Email</span>
+            <span class='bg-slate-700 text-white rounded-xl p-1 w-24'>Stock Prices</span>
+            <span class='bg-slate-700 text-white rounded-xl p-1 w-24'>Email</span>
             <label class="uppercase font-bold border-b-2 border-slate-800 text-lg">Uploaded Files</label>
             <For each={runningAssistant().files}>
               {(file) => (

@@ -1,6 +1,7 @@
 import logging
 import sqlite3
 import json
+import uuid
 from pydantic import BaseModel
 
 
@@ -101,10 +102,20 @@ def __delete_value(username: str) -> int:
 
 
 def create_assistant(user_name: str, name: str, instructions: str, tools: str, assistant_id: str) -> KVStoreItem:
+    # This id will be used to create an images folder
+    __upsert_value(user_name, "id", str(uuid.uuid4()))
+    # The assistant name
     __upsert_value(user_name, "name", name)
+    # The assistant instructions
     __upsert_value(user_name, "instructions", instructions)
+    # The assistant tools
     __upsert_value(user_name, "tools", tools)
+    # The assistant id
     return __upsert_value(user_name, "assistant", assistant_id)
+
+
+def get_user_id(username: str) -> KVStoreItem | None:
+    return __read_value(username, "id")
 
 
 def get_assistant(username: str) -> KVStoreItem | None:

@@ -1,7 +1,7 @@
 import base64
+import shutil
 from urllib.parse import urlparse
 
-from fastapi import HTTPException
 import kvstore
 from models import ResponseMessage
 import tools
@@ -17,7 +17,12 @@ from openai.types.beta.threads.message_content_text import MessageContentText
 from openai.types.beta.threads.message_content_image_file import MessageContentImageFile
 
 
-def Get_response_messages(client, messages) -> list[ResponseMessage]:
+def __user_folders(user_name: str):
+    kvitem_user_id = kvstore.get_user_id(user_name)
+    return (f"wwwroot/images/{kvitem_user_id.value}/", f"images/{kvitem_user_id.value}/")
+
+
+def Get_response_messages(client, messages, user_name: str) -> list[ResponseMessage]:
     message_list = []
     # From all the messages in the tread, get the messages till the last user message only.
     for message in messages:
@@ -41,12 +46,23 @@ def Get_response_messages(client, messages) -> list[ResponseMessage]:
                     item.image_file.file_id)
                 # Read the bytes
                 image_data = response_content.read()
+                (user_image_folder_path, url_path) = __user_folders(user_name)
+                if not os.path.exists(user_image_folder_path):
+                    os.makedirs(user_image_folder_path)
+                # Save the file
+                full_file_path = f"{user_image_folder_path}{item.image_file.file_id}.png"
+                url_path = f"{url_path}/{item.image_file.file_id}.png"
+                logging.info(
+                    f"Saving image to {full_file_path} and available at {url_path}")
+                with open(f"{full_file_path}", "wb") as f:
+                    f.write(image_data)
                 # Encode the bytes into base64 and then utf-u
-                imageContent = base64.b64encode(image_data).decode('utf-8')
+                # imageContent = base64.b64encode(image_data).decode('utf-8')
                 if (len(message.content) > 0):
                     # Add an image to the list
                     response_messages.append(
-                        ResponseMessage(role=message.role, content="", imageContent="data:image/png;base64,"+imageContent))
+                        ResponseMessage(role=message.role, content="", imageContent=f"{url_path}"))
+                    # ResponseMessage(role=message.role, content="", imageContent="data:image/png;base64,"+imageContent))
     # Return the list of ResponseMessages
     return response_messages
 
@@ -216,7 +232,7 @@ def create_assistant(client, user_name: str, name: str, instructions: str, file_
         return (assistant.id, thread.id, str_tools)
 
 
-def process_prompt(client, assistant, thread, prompt, email_uri) -> list[ResponseMessage]:
+def process_prompt(client, assistant, thread, prompt, email_uri, user_name: str) -> list[ResponseMessage]:
     client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
@@ -235,11 +251,10 @@ def process_prompt(client, assistant, thread, prompt, email_uri) -> list[Respons
             thread_id=thread.id, run_id=run.id)
         if run.status == "completed":
             messages = client.beta.threads.messages.list(thread_id=thread.id)
-            return Get_response_messages(client, messages)
-
+            return Get_response_messages(client, messages, user_name)
         elif run.status == "failed":
             messages = client.beta.threads.messages.list(thread_id=thread.id)
-            return Get_response_messages(client, messages)
+            return Get_response_messages(client, messages, user_name)
         elif run.status == "expired":
             # Handle expired
             return []
@@ -256,7 +271,7 @@ def delete_assistant(client, user_name) -> str | None:
     # Get the Assistant settings for the user
     user_assistant_settings = kvstore.get_all(user_name)
     if user_assistant_settings is None or user_assistant_settings == []:
-        raise "User not found"
+        return "User not found"
     try:
         # Delete all the used objects
         for setting in user_assistant_settings:
@@ -281,4 +296,10 @@ def delete_assistant(client, user_name) -> str | None:
                         f"Unable to delete file: {json_data['id']}")
     except:
         pass
+    try:
+        (new_path, _) = __user_folders(user_name)
+        shutil.rmtree(new_path)
+    except:
+        logging.warning(
+            f"Unable to delete the image folder for user {user_name}")
     return None
