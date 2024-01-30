@@ -17,6 +17,7 @@ OPENAI_GPT_DEPLOYMENT=<DEPLOYMENT_NAME>
 ## Frontend
 
 - SolidJS
+- Requirements:
 
 ```json
 "dependencies": {
