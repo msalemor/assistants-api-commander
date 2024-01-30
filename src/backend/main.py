@@ -14,15 +14,20 @@ import kvstore
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 
+# Create the KV store
 kvstore.create_store()
 
+# Read the environment variables into settings
 settings = settings.Instance()
 
 client = AzureOpenAI(api_key=settings.api_key,
                      api_version=settings.api_version,
                      azure_endpoint=settings.api_endpoint)
 
+# Create a FastAPI app
 app = FastAPI()
+
+# Add CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -32,6 +37,7 @@ app.add_middleware(
 )
 
 
+# Get the Assistant status for a user
 @app.get("/api/status", response_model=list[kvstore.KVStoreItem])
 def get_status(userName: str):
     items = kvstore.get_all(userName)
@@ -40,7 +46,7 @@ def get_status(userName: str):
             status_code=404, detail=f"user {userName} not found")
     return items
 
-
+# Create an Assistant for a user
 @app.post("/api/create", response_model=AssistantCreateResponse)
 def post_load_file(request: AssistantCreateRequest):
 
@@ -74,7 +80,7 @@ def post_load_file(request: AssistantCreateRequest):
                                    assistant_id=assistant_id,
                                    thread_id=thread_id, file_ids=file_ids)
 
-
+# Process a Prompt using the user's Assistant
 @app.post("/api/process", response_model=list[ResponseMessage])
 def post_process(request: PromptRequest):
     if request.userName is None or request.userName == "":
@@ -111,7 +117,7 @@ def post_process(request: PromptRequest):
 
     return playground.process_prompt(client, assistant, thread, request.prompt, settings.email_URI, request.userName)
 
-
+# Delete an Assistant
 @app.delete("/api/delete")
 def delete(userName: str):
     error = playground.delete_assistant(client, userName)
@@ -127,5 +133,5 @@ def delete(userName: str):
         raise HTTPException(
             status_code=404, detail=f"User {userName} not found")
 
-
+# Show the static files
 app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")
