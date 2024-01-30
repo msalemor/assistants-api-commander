@@ -6,6 +6,7 @@ An Assistants API playground.
 
 - Create an `.env` file at `src\backend`
 - Add the following values:
+
 ```bash
 OPENAI_URI=https://<NAME>.openai.azure.com/
 BASE_URL=https://<NAME>.openai.azure.com/openai
@@ -14,7 +15,9 @@ OPENAI_GPT_DEPLOYMENT=<DEPLOYMENT_NAME>
 ```
 
 ## Frontend
+
 - SolidJS
+
 ```json
 "dependencies": {
     "@solid-primitives/storage": "^2.1.2",
@@ -26,6 +29,7 @@ OPENAI_GPT_DEPLOYMENT=<DEPLOYMENT_NAME>
 ```
 
 ## Backend
+
 - Python 3.10
 - [Requirements](src/backend/requirements.txt)
 
@@ -33,9 +37,11 @@ OPENAI_GPT_DEPLOYMENT=<DEPLOYMENT_NAME>
 
 - Open to [Makefile](Makefile)
 - Update the following variables:
+
 ```text
 TAG=0.0.5
 DOCKER_PATH=am8850
 DOCKER_NAME=aiassistant01
 ```
+
 - Type: `make deploy`
