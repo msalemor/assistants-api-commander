@@ -9,6 +9,8 @@ build:
 	rm -rf src/backend/wwwroot
 	mkdir src/backend/wwwroot
 	cp -r src/frontend/dist/* src/backend/wwwroot/.
+	
+docker-build: build
 	cd src/backend && docker build . -t am8850/aiassistant01:$(TAG)
 
 docker-run: build

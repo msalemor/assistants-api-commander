@@ -1,6 +1,5 @@
 import logging
 from fastapi.staticfiles import StaticFiles
-import json
 import playground
 import settings
 
@@ -14,12 +13,13 @@ import kvstore
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 
-# Create the KV store
+# Create the SQLite KV store
 kvstore.create_store()
 
 # Read the environment variables into settings
 settings = settings.Instance()
 
+# Create an Azure OpenAI client
 client = AzureOpenAI(api_key=settings.api_key,
                      api_version=settings.api_version,
                      azure_endpoint=settings.api_endpoint)
@@ -45,6 +45,7 @@ def get_status(userName: str):
         raise HTTPException(
             status_code=404, detail=f"user {userName} not found")
     return items
+
 
 # Create an Assistant for a user
 @app.post("/api/create", response_model=AssistantCreateResponse)
@@ -79,6 +80,7 @@ def post_load_file(request: AssistantCreateRequest):
                                    instructions=request.instructions, tools=tools,
                                    assistant_id=assistant_id,
                                    thread_id=thread_id, file_ids=file_ids)
+
 
 # Process a Prompt using the user's Assistant
 @app.post("/api/process", response_model=list[ResponseMessage])
@@ -117,6 +119,7 @@ def post_process(request: PromptRequest):
 
     return playground.process_prompt(client, assistant, thread, request.prompt, settings.email_URI, request.userName)
 
+
 # Delete an Assistant
 @app.delete("/api/delete")
 def delete(userName: str):
@@ -132,6 +135,7 @@ def delete(userName: str):
     else:
         raise HTTPException(
             status_code=404, detail=f"User {userName} not found")
+
 
 # Show the static files
 app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")
