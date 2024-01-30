@@ -1,2 +1,3 @@
-# assistants-api-playground
-An Assistants API playground
+# Assistants API Playground
+
+An Assistants API playground.
