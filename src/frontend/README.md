@@ -1,4 +1,4 @@
-## Usage with `bun.sh`
+## Usage with [bun.sh](https://bun.sh/)
 
 ```bash
 $ bun install
