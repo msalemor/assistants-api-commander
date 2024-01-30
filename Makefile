@@ -9,5 +9,8 @@ build:
 	cp -r src/frontend/dist/* src/backend/wwwroot/.
 	cd src/backend && docker build . -t am8850/aiassistant01:$(TAG)
 
+docker-run:
+	cd src/backend && docker build run --rm -p 8080:80 --env-file=.env am8850/aiassistant01:$(TAG)
+
 deploy: build
 	docker push am8850/aiassistant01:$(TAG)
