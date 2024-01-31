@@ -150,7 +150,30 @@ def delete_file(username: str, file_id: str) -> int:
     return __delete_value(username, file_id)
 
 
-def get_all(username: str) -> list[KVStoreItem]:
+def get_all_user() -> list[KVStoreItem]:
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT username, key, value FROM kvstore where key='name'")
+        result = cursor.fetchall()
+        if result is None:
+            return []
+
+        kv_list = []
+        for row in result:
+            kv_list.append(KVStoreItem(
+                username=row[0], key=row[1], value=row[2]))
+
+        cursor.close()
+        return kv_list
+    except:
+        logging.error(f"Failed to read value for {username} {key}")
+        return []
+    finally:
+        cursor.close()
+
+
+def get_user(username: str) -> list[KVStoreItem]:
     return __read_values(username, None)
 
 
@@ -163,7 +186,7 @@ def tests():
     create_thread("alex", "thread_id")
     create_files("alex", [("file_1", "file_id_1"), ("file_2", "file_id_2")])
     print(get_files("alex"))
-    all = get_all("alex")
+    all = get_user("alex")
     for item in all:
         print(item)
     print(del_user("alex"))

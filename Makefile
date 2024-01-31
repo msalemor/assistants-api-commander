@@ -1,7 +1,7 @@
 default:
 	@echo "Please specify a target to build"
 
-TAG=0.0.10
+TAG=0.0.11
 DOCKER_PATH=am8850
 DOCKER_NAME=aiassistant01
 build:
@@ -13,7 +13,7 @@ build:
 docker-build: build
 	cd src/backend && docker build . -t am8850/aiassistant01:$(TAG)
 
-docker-run: build
+docker-run: docker-build
 	cd src/backend && docker run --rm -p 8080:80 --env-file=.env am8850/aiassistant01:$(TAG)
 
 docker-deploy: build

@@ -38,9 +38,9 @@ app.add_middleware(
 
 
 # Get the Assistant status for a user
-@app.get("/api/status", response_model=list[kvstore.KVStoreItem])
+@app.get("/api/status/{userName}", response_model=list[kvstore.KVStoreItem])
 def get_status(userName: str):
-    items = kvstore.get_all(userName)
+    items = kvstore.get_user(userName)
     if items is None or items == []:
         raise HTTPException(
             status_code=404, detail=f"user {userName} not found")
@@ -121,7 +121,7 @@ def post_process(request: PromptRequest):
 
 
 # Delete an Assistant
-@app.delete("/api/delete")
+@app.delete("/api/delete/{userName}")
 def delete(userName: str):
     error = playground.delete_assistant(client, userName)
     if error is not None:
@@ -135,6 +135,38 @@ def delete(userName: str):
     else:
         raise HTTPException(
             status_code=404, detail=f"User {userName} not found")
+
+
+# Maintenance routes
+# Delete all Assistants
+@app.delete("/api/delete")
+def delete_all():
+
+    kv_all_users = kvstore.get_all_user()
+    # Delete all the Assistants for all users
+    for user in kv_all_users:
+        error = playground.delete_assistant(client, user.value)
+        if error is not None:
+            raise HTTPException(
+                status_code=404, detail=f"User {userName} note found")
+
+        # Delete the KVStore entries for the user
+        count = kvstore.del_user(userName)
+        if count > 0:
+            return {"message": f"Assistant deleted for user: {userName}"}
+        else:
+            raise HTTPException(
+                status_code=404, detail=f"User {userName} not found")
+
+
+# Get all status for all users
+@app.get("/api/status", response_model=list[kvstore.KVStoreItem])
+def get_all_status():
+    items = kvstore.get_all_user()
+    if items is None or items == []:
+        raise HTTPException(
+            status_code=404, detail=f"user {userName} not found")
+    return items
 
 
 # Show the static files
