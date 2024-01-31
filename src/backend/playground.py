@@ -22,7 +22,7 @@ def __user_folders(user_name: str):
     return (f"wwwroot/images/{kvitem_user_id.value}/", f"images/{kvitem_user_id.value}/")
 
 
-def Get_response_messages(client, messages, user_name: str) -> list[ResponseMessage]:
+def get_response_messages(client, messages, user_name: str) -> list[ResponseMessage]:
     message_list = []
     # From all the messages in the tread, get the messages till the last user message only.
     for message in messages:
@@ -111,7 +111,7 @@ def create_files(client, user_name: str, file_urls: list[str]) -> list[str]:
     return file_ids
 
 
-def Create_thread(client, user_name: str):
+def create_thread(client, user_name: str):
     thread = None
     try:
         id = kvstore.get_thread(user_name)
@@ -125,7 +125,7 @@ def Create_thread(client, user_name: str):
     return thread
 
 
-def Call_functions(client, thread, run, email_URI: str):
+def call_functions(client, thread, run, email_URI: str):
     print("Function Calling")
     required_actions = run.required_action.submit_tool_outputs.model_dump()
     print(required_actions)
@@ -227,7 +227,7 @@ def create_assistant(client, user_name: str, name: str, instructions: str, file_
             user_name, name, instructions, str_tools, assistant.id)
 
         # Create the thread for the user
-        thread = Create_thread(client, user_name)
+        thread = create_thread(client, user_name)
 
         return (assistant.id, thread.id, str_tools)
 
@@ -251,10 +251,10 @@ def process_prompt(client, assistant, thread, prompt, email_uri, user_name: str)
             thread_id=thread.id, run_id=run.id)
         if run.status == "completed":
             messages = client.beta.threads.messages.list(thread_id=thread.id)
-            return Get_response_messages(client, messages, user_name)
+            return get_response_messages(client, messages, user_name)
         elif run.status == "failed":
             messages = client.beta.threads.messages.list(thread_id=thread.id)
-            return Get_response_messages(client, messages, user_name)
+            return get_response_messages(client, messages, user_name)
         elif run.status == "expired":
             # Handle expired
             return []
@@ -262,14 +262,14 @@ def process_prompt(client, assistant, thread, prompt, email_uri, user_name: str)
             # Handle cancelled
             return []
         elif run.status == "requires_action":
-            Call_functions(client, thread, run, email_uri)
+            call_functions(client, thread, run, email_uri)
         else:
             time.sleep(5)
 
 
 def delete_assistant(client, user_name) -> str | None:
     # Get the Assistant settings for the user
-    user_assistant_settings = kvstore.get_all(user_name)
+    user_assistant_settings = kvstore.get_user(user_name)
     if user_assistant_settings is None or user_assistant_settings == []:
         return "User not found"
     try:

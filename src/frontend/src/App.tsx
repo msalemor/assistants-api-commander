@@ -4,16 +4,13 @@ import { IoInformationCircleOutline } from 'solid-icons/io'
 import { For, createSignal } from 'solid-js'
 import { SolidMarkdown } from 'solid-markdown'
 import { Spinner, SpinnerType } from 'solid-spinner'
-// import solidLogo from './assets/solid.svg'
-// import viteLogo from '/vite.svg'
-//import './App.css'
 
-const BaseURL = '/api/'
-//const BaseURL = 'http://127.0.0.1:8000/api/'
+// @ts-ignore
+const BaseURL = window.base_url;
 const POST_CREATE = BaseURL + 'create'
 const POST_PROCESS = BaseURL + 'process'
-const GET_STATUS = BaseURL + 'status?userName={name}'
-const DELETE_ASSISTANT = BaseURL + 'delete?userName={name}'
+const GET_STATUS = BaseURL + 'status/{name}'
+const DELETE_ASSISTANT = BaseURL + 'delete/{name}'
 
 interface ISettings {
   user: string,
