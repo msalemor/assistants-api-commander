@@ -145,7 +145,8 @@ def delete_all():
     kv_all_users = kvstore.get_all_user()
     # Delete all the Assistants for all users
     for user in kv_all_users:
-        error = playground.delete_assistant(client, user.value)
+        userName = user.value
+        error = playground.delete_assistant(client, userName)
         if error is not None:
             raise HTTPException(
                 status_code=404, detail=f"User {userName} note found")
@@ -165,7 +166,7 @@ def get_all_status():
     items = kvstore.get_all_user()
     if items is None or items == []:
         raise HTTPException(
-            status_code=404, detail=f"user {userName} not found")
+            status_code=404, detail=f"There are no users in the database")
     return items
 
 
