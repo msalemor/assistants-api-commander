@@ -79,6 +79,7 @@ module backend 'aca-app.bicep' = {
     tags: tags
     containerAppsEnvironmentName: containerApps.outputs.environmentName
     imageName: backendImageName
+    targetPort: 3000
     serviceName: 'backend'
   }
 }
@@ -93,10 +94,16 @@ module frontend 'aca-app.bicep' = {
     tags: tags
     containerAppsEnvironmentName: containerApps.outputs.environmentName
     imageName: frontendImageName
+    targetPort: 3000
+    env: [
+      {
+        name: 'backend'
+        value: 'https://${backend.outputs.SERVICE_API_URI}/api'
+      }
+    ]
     serviceName: 'frontend'
   }
 }
-
 
 module logAnalyticsWorkspace 'core/monitor/loganalytics.bicep' = {
   name: 'loganalytics'

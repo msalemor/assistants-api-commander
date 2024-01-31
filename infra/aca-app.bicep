@@ -4,6 +4,8 @@ param tags object = {}
 
 param containerAppsEnvironmentName string
 param imageName string
+param targetPort int
+param env array = []
 param serviceName string
 
 module app 'core/host/container-app-upsert.bicep' = {
@@ -14,7 +16,8 @@ module app 'core/host/container-app-upsert.bicep' = {
     tags: union(tags, { 'azd-service-name': serviceName })
     imageName: imageName
     containerAppsEnvironmentName: containerAppsEnvironmentName
-    targetPort: 3100
+    env: env
+    targetPort: targetPort
   }
 }
 
