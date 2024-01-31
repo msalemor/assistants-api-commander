@@ -13,7 +13,7 @@ WORKDIR /usr/src/app
 COPY --from=build /app/server/startup /opt/startup
 COPY --from=build /app/server/startup/sshd_config /etc/ssh/
 COPY --from=build /app/server /usr/src/app/server
-COPY --from=build /app/public /usr/src/app/server/public
+COPY --from=build /app/dist /usr/src/app/server/public
 
 # Install Tools - nscd is a DNS Cache
 RUN apt-get update \
