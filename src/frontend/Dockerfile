@@ -1,9 +1,19 @@
+FROM node:21-bookworm AS build
+WORKDIR /app
+COPY . .
+RUN cd /app/src/frontend \
+    && npm install \
+    && npm run build
+
 FROM node:21-bookworm
 
 # Create app directory
 WORKDIR /usr/src/app
 
-COPY startup /opt/startup
+COPY --from=build /app/src/frontend/server/startup /opt/startup
+COPY --from=build /app/src/frontend/server/startup/sshd_config /etc/ssh/
+COPY --from=build /app/src/frontend/server /usr/src/app/server
+COPY --from=build /app/src/frontend/public /usr/src/app/server/public
 
 # Install Tools - nscd is a DNS Cache
 RUN apt-get update \
@@ -14,18 +24,10 @@ RUN npm install -g pm2 \
     && echo "root:Docker!" | chpasswd \
     && echo "cd /usr/src/app" >> /etc/bash.bashrc \
     && cd /opt/startup \
-    && chmod 755 /opt/startup/init_container.sh
-
-COPY ./server/startup/sshd_config /etc/ssh/
-
-COPY package*.json ./
-
-RUN npm install
-# If you are building your code for production
-# RUN npm install --only=production
-
-# Bundle app source
-COPY . .
+    && chmod 755 /opt/startup/init_container.sh \
+    && chmod 755 /opt/startup/init_container.sh \
+    && cd /usr/src/app/server \
+    && npm install
 
 EXPOSE 3000
 
@@ -38,5 +40,4 @@ ENV PATH ${PATH}:/usr/src/app
 
 ENV APP_HOME "/usr/src/app"
 
-# CMD [ "npm", "start" ]
 ENTRYPOINT ["/opt/startup/init_container.sh"]
