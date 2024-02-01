@@ -97,7 +97,7 @@ module frontend 'aca-app.bicep' = {
     targetPort: 3000
     env: [
       {
-        name: 'backend'
+        name: 'backendUri'
         value: 'https://${backend.outputs.SERVICE_API_URI}/api'
       }
     ]
