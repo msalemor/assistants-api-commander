@@ -104,20 +104,20 @@ module backend 'aca-app.bicep' = {
         value: OPENAI_URI
       }
       {
-        name: 'OPENAI_KEY'
+        name: 'BASE_URL'
         value: BASE_URL
       }
       {
-        name: 'OPENAI_VERSION'
+        name: 'OPENAI_KEY'
         value: OPENAI_KEY
-      }
-      {
-        name: 'OPENAI_GPT_DEPLOYMENT'
-        value: OPENAI_GPT_DEPLOYMENT
       }
       {
         name: 'OPENAI_VERSION'
         value: OPENAI_VERSION
+      }
+      {
+        name: 'OPENAI_GPT_DEPLOYMENT'
+        value: OPENAI_GPT_DEPLOYMENT
       }
       {
         name: 'EMAIL_URI'
