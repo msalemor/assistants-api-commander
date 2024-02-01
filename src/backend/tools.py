@@ -1,20 +1,27 @@
+import html
 from pydantic import BaseModel
 import yfinance as yf
 import requests
+import logging
 
 
 def get_stock_price(symbol: str) -> float:
+    logging.info(f"Getting stock price for {symbol}")
     stock = yf.Ticker(symbol)
     price = stock.history(period="1d")['Close'].iloc[-1]
     return price
 
 
 def send_logic_apps_email(email_url: str, to: str, content: str):
-    json_payload = {'to': to, 'content': content}
-    headers = {'Content-Type': 'application/json'}
-    response = requests.post(email_url, json=json_payload, headers=headers)
-    if response.status_code == 202:
-        print("Email sent to: " + json_payload['to'])
+    try:
+        logging.info(f"Sending email to {to}")
+        json_payload = {'to': to, 'content':  html.escape(content)}
+        headers = {'Content-Type': 'application/json'}
+        response = requests.post(email_url, json=json_payload, headers=headers)
+        if response.status_code == 202:
+            print("Email sent to: " + json_payload['to'])
+    except Exception as e:
+        logging.error(f"Unable to send email due to {e}")
 
 
 class Country:
