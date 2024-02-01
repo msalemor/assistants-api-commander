@@ -142,7 +142,7 @@ module frontend 'aca-app.bicep' = {
     env: [
       {
         name: 'backendUri'
-        value: '${backend.outputs.SERVICE_API_URI}/api'
+        value: '${backend.outputs.SERVICE_API_URI}/api/'
       }
     ]
     serviceName: 'frontend'
