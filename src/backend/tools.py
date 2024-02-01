@@ -15,7 +15,7 @@ def get_stock_price(symbol: str) -> float:
 def send_logic_apps_email(email_url: str, to: str, content: str):
     try:
         logging.info(f"Sending email to {to}")
-        json_payload = {'to': to, 'content':  html.escape(content)}
+        json_payload = {'to': to, 'content':  html.unescape(content)}
         headers = {'Content-Type': 'application/json'}
         response = requests.post(email_url, json=json_payload, headers=headers)
         if response.status_code == 202:

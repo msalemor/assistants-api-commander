@@ -1,14 +1,15 @@
-import logging
 from fastapi.staticfiles import StaticFiles
-import playground
-import settings
-
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from models import AssistantCreateRequest, AssistantCreateResponse, ResponseMessage, PromptRequest
-
-from openai import AzureOpenAI
 import kvstore
+from openai import AzureOpenAI
+from models import AssistantCreateRequest, AssistantCreateResponse, ResponseMessage, PromptRequest
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException
+import playground
+import logging
+import settings
+# Read the environment variables into settings
+settings = settings.Instance()
+
 
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
@@ -16,8 +17,6 @@ logging.basicConfig(format='%(asctime)s %(message)s',
 # Create the SQLite KV store
 kvstore.create_store()
 
-# Read the environment variables into settings
-settings = settings.Instance()
 
 # Create an Azure OpenAI client
 client = AzureOpenAI(api_key=settings.api_key,
@@ -171,4 +170,5 @@ def get_all_status():
 
 
 # Show the static files
-app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")
+if settings.deploy_spa == "True":
+    app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")
