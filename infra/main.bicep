@@ -13,11 +13,29 @@ param environmentName string
 @description('Primary location for all resources')
 param location string
 
-@description('Container Registry image name for the backend app')
+@description('Container Registry image name for the backend app ex: myregistry.azurecr.io/myimage:tag')
 param backendImageName string
 
-@description('Container Registry image name for the frontend app')
+@description('Container Registry image name for the frontend app ex: myregistry.azurecr.io/myimage:tag')
 param frontendImageName string
+
+@description('OpenAI API URI ex: https://XXXXXXX.openai.azure.com/')
+param OPENAI_URI string
+
+@description('OpenAI Base URL ex: https://XXXXXXX.openai.azure.com/openai')
+param BASE_URL string
+
+@description('OpenAI API Key ex: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX')
+param OPENAI_KEY string
+
+@description('OpenAI Deployment Name')
+param OPENAI_GPT_DEPLOYMENT string
+
+@description('OpenAI Version ex: 2024-02-15-preview')
+param OPENAI_VERSION string
+
+@description('EMAIL_URI logic app ex: https://<NAME>:443/workflows/<id>/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=<SIG>')
+param EMAIL_URI string
 
 // Optional parameters to override the default azd resource naming conventions.
 // Add the following to main.parameters.json to provide values:
@@ -79,7 +97,33 @@ module backend 'aca-app.bicep' = {
     tags: tags
     containerAppsEnvironmentName: containerApps.outputs.environmentName
     imageName: backendImageName
-    targetPort: 3000
+    targetPort: 80
+    env: [
+      {
+        name: 'OPENAI_URI'
+        value: OPENAI_URI
+      }
+      {
+        name: 'OPENAI_KEY'
+        value: BASE_URL
+      }
+      {
+        name: 'OPENAI_VERSION'
+        value: OPENAI_KEY
+      }
+      {
+        name: 'OPENAI_GPT_DEPLOYMENT'
+        value: OPENAI_GPT_DEPLOYMENT
+      }
+      {
+        name: 'OPENAI_VERSION'
+        value: OPENAI_VERSION
+      }
+      {
+        name: 'EMAIL_URI'
+        value: EMAIL_URI
+      }
+    ]
     serviceName: 'backend'
   }
 }
