@@ -1,5 +1,5 @@
 import logging
-from fastapi.staticfiles import StaticFiles
+#from fastapi.staticfiles import StaticFiles
 import playground
 import settings
 
@@ -170,4 +170,4 @@ def get_all_status():
 
 
 # Show the static files
-app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")
+#app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")
