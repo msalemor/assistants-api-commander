@@ -1,14 +1,15 @@
-import logging
-#from fastapi.staticfiles import StaticFiles
-import playground
-import settings
-
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from models import AssistantCreateRequest, AssistantCreateResponse, ResponseMessage, PromptRequest
-
-from openai import AzureOpenAI
+from fastapi.staticfiles import StaticFiles
 import kvstore
+from openai import AzureOpenAI
+from models import AssistantCreateRequest, AssistantCreateResponse, ResponseMessage, PromptRequest
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException
+import playground
+import logging
+import settings
+# Read the environment variables into settings
+settings = settings.Instance()
+
 
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
@@ -16,8 +17,6 @@ logging.basicConfig(format='%(asctime)s %(message)s',
 # Create the SQLite KV store
 kvstore.create_store()
 
-# Read the environment variables into settings
-settings = settings.Instance()
 
 # Create an Azure OpenAI client
 client = AzureOpenAI(api_key=settings.api_key,
@@ -145,7 +144,8 @@ def delete_all():
     kv_all_users = kvstore.get_all_user()
     # Delete all the Assistants for all users
     for user in kv_all_users:
-        error = playground.delete_assistant(client, user.value)
+        userName = user.value
+        error = playground.delete_assistant(client, userName)
         if error is not None:
             raise HTTPException(
                 status_code=404, detail=f"User {userName} note found")
@@ -165,9 +165,10 @@ def get_all_status():
     items = kvstore.get_all_user()
     if items is None or items == []:
         raise HTTPException(
-            status_code=404, detail=f"user {userName} not found")
+            status_code=404, detail=f"There are no users in the database")
     return items
 
 
 # Show the static files
-#app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")
+if settings.deploy_spa == "True":
+    app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")

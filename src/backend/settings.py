@@ -12,9 +12,7 @@ class Settings:
         self.api_version = os.getenv("OPENAI_VERSION")
         self.api_deployment_name = os.getenv("OPENAI_GPT_DEPLOYMENT")
         self.email_URI = os.getenv("EMAIL_URI")
-
-    # def __str__(self):
-    #     return f"api_endpoint: {self.api_endpoint}, api_key: {self.api_key}, api_version: {self.api_version}, api_deployment_name: {self.api_deployment_name}, email_URI: {self.email_URI}"
+        self.deploy_spa = os.getenv("DEPLOY_SPA")
 
 
 settings = None
