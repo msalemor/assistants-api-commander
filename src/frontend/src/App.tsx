@@ -191,7 +191,7 @@ function App() {
 
   return (
     <>
-      <header class="bg-slate-950 text-white p-3 text-2xl font-bold h-[60px]">Assistants API Playground</header>
+      <header class="bg-slate-950 text-white p-3 text-2xl font-bold h-[60px]">Assistants API Commander</header>
       <div class="flex flex-row h-[calc(100vh-100px)]">
         <aside class="bg-slate-200 p-2 w-1/4 overflow-auto">
           <div class="flex flex-col p-3 space-y-2">

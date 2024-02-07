@@ -1,9 +1,9 @@
 default:
 	@echo "Please specify a target to build"
 
-TAG=0.0.13
+TAG=0.0.1
 DOCKER_PATH=am8850
-DOCKER_NAME=aiassistant01
+DOCKER_NAME=asstcommander
 build:
 	cd src/frontend && bun run build
 	rm -rf src/backend/wwwroot
@@ -11,10 +11,10 @@ build:
 	cp -r src/frontend/dist/* src/backend/wwwroot/.
 	
 docker-build: build
-	cd src/backend && docker build . -t am8850/aiassistant01:$(TAG)
+	cd src/backend && docker build . -t $(DOCKER_PATH)/$(DOCKER_NAME):$(TAG)
 
 docker-run: docker-build
-	cd src/backend && docker run --rm -p 8080:80 --env-file=.env am8850/aiassistant01:$(TAG)
+	cd src/backend && docker run --rm -p 8080:80 --env-file=.env $(DOCKER_PATH)/$(DOCKER_NAME):$(TAG)
 
-docker-push: build
+docker-push: docker-build
 	docker push $(DOCKER_PATH)/$(DOCKER_NAME):$(TAG)
