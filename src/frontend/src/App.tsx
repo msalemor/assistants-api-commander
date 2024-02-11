@@ -1,9 +1,10 @@
 import { makePersisted } from '@solid-primitives/storage'
 import axios from 'axios'
-import { IoInformationCircleOutline } from 'solid-icons/io'
+import { IoInformationCircleOutline, IoSend } from 'solid-icons/io'
 import { For, createSignal } from 'solid-js'
 import { SolidMarkdown } from 'solid-markdown'
 import { Spinner, SpinnerType } from 'solid-spinner'
+
 
 // @ts-ignore
 const BaseURL = window.base_url;
@@ -168,15 +169,29 @@ function App() {
     }
   }
 
-  const LoadSampleData = () => {
-    const sampleSettings: ISettings = {
+  const LoadSampleData = (scenario: string) => {
+    let sampleSettings: ISettings = {
       user: '',
       name: 'Personal Assistant',
       instructions: 'You are an Assistant that can help analyze and perform calculations on the provided data file(s). Use only the provided data. Be polite, friendly, and helpful. After answering a user\'s question, say, "Can I be of further assistance."',
       files: 'https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv',
     }
+    switch (scenario) {
+      case 'energy':
+        sampleSettings.files = 'https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv'
+        break
+      case 'finance':
+        sampleSettings.files = 'https://alemoraoaist.z13.web.core.windows.net/docs/finance/portfolio.csv'
+        break
+      case 'banking':
+        sampleSettings.files = 'https://alemoraoaist.z13.web.core.windows.net/docs/banking/failed_banks.csv'
+        break
+      default:
+        sampleSettings.files = 'https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv'
+        break
+    }
     setSettings({ ...settings(), ...sampleSettings })
-    setPrompt('What is the latest Microsoft, Apple, Tesla, and NVIDIA stock prices?')
+    setPrompt('Please chart the latest Microsoft, Apple, Tesla, and NVIDIA stock prices.')
   }
 
   const StatusBarColor = () => {
@@ -220,19 +235,36 @@ function App() {
               value={settings().files}
             />
           </div>
+          <div class='px-3 space-x-1 text-sm font-semibold'>
+            <span>Samples:</span>
+            <button class="text-blue-600 hover:underline hover:font-semibold"
+              onclick={() => LoadSampleData('finance')}
+              disabled={runningAssistant().assistant_id !== ''}
+            >Finance</button>
+            <span>|</span>
+            <button class="text-blue-600 hover:underline hover:font-semibold"
+              onclick={() => LoadSampleData('energy')}
+              disabled={runningAssistant().assistant_id !== ''}
+            >Energy</button>
+            <span>|</span>
+            <button class="text-blue-600 hover:underline hover:font-semibold"
+              onclick={() => LoadSampleData('banking')}
+              disabled={runningAssistant().assistant_id !== ''}
+            >Banking</button>
+          </div>
           <div class="flex flex-row space-x-2 p-3">
-            <button class='w-20 p-2 bg-blue-700 text-white font-semibold disabled:bg-slate-500'
+            <button class='w-20 p-2 bg-blue-600 text-white font-semibold disabled:bg-slate-500'
               onclick={CreateAssistant}
               disabled={runningAssistant().assistant_id !== ''}
             >Create</button>
-            <button class='w-20 p-2 bg-blue-700 text-white font-semibold disabled:bg-slate-500'
+            <button class='w-20 p-2 bg-blue-600 text-white font-semibold disabled:bg-slate-500'
               onclick={DeleteAssistant}
               disabled={runningAssistant().assistant_id === ''}
             >Delete</button>
-            <button class='w-20 p-2 bg-blue-700 text-white font-semibold disabled:bg-slate-500'
+            {/* <button class='w-20 p-2 bg-blue-700 text-white font-semibold disabled:bg-slate-500'
               onclick={LoadSampleData}
               disabled={runningAssistant().assistant_id !== ''}
-            >Sample</button>
+            >Sample</button> */}
           </div>
           <div class="flex flex-col p-3 space-y-2">
             <label class="uppercase font-bold border-b-2 border-slate-800 text-lg">Available Tools</label>
@@ -255,10 +287,11 @@ function App() {
               <textarea class='outline-none p-2 w-full bg-blue-100 rounded'
                 onchange={(e) => setPrompt(e.target.value)}
                 value={prompt()}
+                onkeydown={(e) => { if (e.key === 'Enter' && e.ctrlKey) Process() }}
                 rows={5}></textarea>
-              <button class='p-1 bg-blue-800 hover:bg-blue-700 font-semibold text-white'
+              <button class='px-3 bg-blue-400 hover:bg-blue-700 font-semibold text-white'
                 onclick={Process}
-              >Search</button>
+              ><IoSend /></button>
             </div>
             <For each={threadMessages()}>
               {(message) => (
