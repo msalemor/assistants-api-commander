@@ -1,7 +1,7 @@
 default:
 	@echo "Please specify a target to build"
 
-TAG=0.0.2
+TAG=0.0.3
 DOCKER_PATH=am8850
 DOCKER_NAME=asstcommander
 build:

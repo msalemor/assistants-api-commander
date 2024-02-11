@@ -173,25 +173,29 @@ function App() {
     let sampleSettings: ISettings = {
       user: '',
       name: 'Personal Assistant',
-      instructions: 'You are an Assistant that can help analyze and perform calculations on the provided data file(s). Use only the provided data. Be polite, friendly, and helpful. After answering a user\'s question, say, "Can I be of further assistance."',
+      instructions: 'You are an Assistant that can help analyze and perform calculations using the provided files. Use only the  data in this file Be polite, friendly, and helpful. After answering a user\'s question, say, "Can I be of further assistance."',
       files: 'https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv',
     }
     switch (scenario) {
       case 'energy':
         sampleSettings.files = 'https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv'
+        setPrompt('Chart the number of turbines by sector.')
         break
       case 'finance':
         sampleSettings.files = 'https://alemoraoaist.z13.web.core.windows.net/docs/finance/portfolio.csv'
+        setPrompt('Chart the realized gain or loss for each of my investments.')
         break
       case 'banking':
         sampleSettings.files = 'https://alemoraoaist.z13.web.core.windows.net/docs/banking/failed_banks.csv'
+        setPrompt('Please chart the number of failed banks by State.')
         break
       default:
         sampleSettings.files = 'https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv'
+        setPrompt('Chart the number of turbines by sector.')
         break
     }
     setSettings({ ...settings(), ...sampleSettings })
-    setPrompt('Please chart the latest Microsoft, Apple, Tesla, and NVIDIA stock prices.')
+
   }
 
   const StatusBarColor = () => {
