@@ -4,7 +4,7 @@
 
 ## Overview
 
-Assistants API Commander is an application that was designed to help hone and solidify the Assistants API intelligent application concepts including:
+Assistants API Commander is an application that was designed to help hone and solidify the Assistants API intelligent application development concepts including:
 
 Objects
 
