@@ -7,20 +7,29 @@
 
 An Assistants API Commander is an application that was designed to help hone the Assistants API concepts including:
 
-- Ojbects
-  - Assistant
-  - Thread
-  - Messages
-  - Runs
-- Tools
-  - Function Calling
-  - Code Interpreter
-- Lifetime event management
-  - Completed
-  - Requires action
-  - Etc.
-- Statement management
-  - Storing the different user Assistants, threads and files
+Objects
+
+- Assistant
+- Thread
+- Messages
+- Runs
+
+Tools:
+
+- Function Calling
+- Code Interpreter
+
+Lifetime event management
+
+- Completed
+- Requires action
+- Etc.
+
+Statement management
+
+- Storing the different user Assistants, threads, and files
+
+The application is made up of a Python FastAPI and OpenAI SDK backend, and a Vite SolidJS frontend. Generally, there would be one Assistant and multiple user Threads, but the Assistants API Commander can create one Assistant per user, each with its own set of data files. Assistants API can generate charts and graphs, and Assistants API Commander can display these images.
 
 The application is made up of a Python FastAPI and OpenAI SDK backend, and a Vite SolidJS frontend.
 
