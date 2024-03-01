@@ -1,7 +1,6 @@
 # Assistants API Commander
 
 ![A screenshot of Assistants API Commander displaying a graph and some results](images/assistants-api-commander.png)
-](images/assistants-api-commander.png)
 
 ## Overview
 
