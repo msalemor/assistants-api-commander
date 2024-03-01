@@ -84,4 +84,4 @@ DOCKER_PATH=am8850
 DOCKER_NAME=aiassistant01
 ```
 
-- Type: `make run`
+- Type: `make docker-run`
