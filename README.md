@@ -1,6 +1,6 @@
-# Assistants API Playground
+# Assistants API Commander
 
-An Assistants API playground.
+An Assistants API Commander.
 
 ## Requirements
 
