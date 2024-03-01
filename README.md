@@ -30,8 +30,6 @@ Statement management
 
 The application is made up of a Python FastAPI and OpenAI SDK backend, and a Vite SolidJS frontend. Generally, there would be one Assistant and multiple user Threads, but the Assistants API Commander can create one Assistant per user, each with its own set of data files. Assistants API can generate charts and graphs, and Assistants API Commander can display these images.
 
-The application is made up of a Python FastAPI and OpenAI SDK backend, and a Vite SolidJS frontend.
-
 Generally, there would be one Assistant and multiple user Threads, but the Assistants API Commander can create one Assistant per user, each with its own set of data files. Assistants API can generate charts and graphs, and Assistants API Commander can display these images.
 
 ## Requirements
