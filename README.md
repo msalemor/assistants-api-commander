@@ -4,7 +4,7 @@
 
 ## Overview
 
-An Assistants API Commander is an application that was designed to help hone the Assistants API concepts including:
+Assistants API Commander is an application that was designed to help hone and solidify the Assistants API intelligent application concepts including:
 
 Objects
 
@@ -32,7 +32,7 @@ The application is made up of a Python FastAPI and OpenAI SDK backend, and a Vit
 
 The application is made up of a Python FastAPI and OpenAI SDK backend, and a Vite SolidJS frontend.
 
-Generally, there would be on Assistant and multiple user Threads, but Assistants API Commander can create on Assistant per user, each with its own set of data files. Assistants API can generate chart and graphs, and Assistants API Command can display these images.
+Generally, there would be one Assistant and multiple user Threads, but the Assistants API Commander can create one Assistant per user, each with its own set of data files. Assistants API can generate charts and graphs, and Assistants API Commander can display these images.
 
 ## Requirements
 
