@@ -1,6 +1,30 @@
 # Assistants API Commander
 
-An Assistants API Commander.
+![A screenshot of Assistants API Commander displaying a graph and some results](images/assistants-api-commander.png)
+](images/assistants-api-commander.png)
+
+## Overview
+
+An Assistants API Commander is an application that was designed to help hone the Assistants API concepts including:
+
+- Ojbects
+  - Assistant
+  - Thread
+  - Messages
+  - Runs
+- Tools
+  - Function Calling
+  - Code Interpreter
+- Lifetime event management
+  - Completed
+  - Requires action
+  - Etc.
+- Statement management
+  - Storing the different user Assistants, threads and files
+
+The application is made up of a Python FastAPI and OpenAI SDK backend, and a Vite SolidJS frontend.
+
+Generally, there would be on Assistant and multiple user Threads, but Assistants API Commander can create on Assistant per user, each with its own set of data files. Assistants API can generate chart and graphs, and Assistants API Command can display these images.
 
 ## Requirements
 
@@ -34,15 +58,22 @@ OPENAI_GPT_DEPLOYMENT=<DEPLOYMENT_NAME>
 - Python 3.10
 - [Requirements](src/backend/requirements.txt)
 
-## Deploying as a docker container
+## Local development
+
+Using Vscode:
+- Launch the backend
+  - `cd src/backend && uvicorn main:app --reload`
+- Launch the frontend
+  - `bun run dev` or `npm run dev`
+
+## Running locally as a docker container with Make
 
 - Open to [Makefile](Makefile)
 - Update the following variables:
-
 ```text
 TAG=0.0.5
 DOCKER_PATH=am8850
 DOCKER_NAME=aiassistant01
 ```
 
-- Type: `make deploy`
+- Type: `make run`
