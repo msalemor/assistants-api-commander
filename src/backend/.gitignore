@@ -3,3 +3,5 @@ __pycache__
 wwwroot/*
 data/*
 requests.http
+.python-version
+.venv
