@@ -4,3 +4,4 @@ pydantic
 uvicorn
 yfinance
 openai
+httpx

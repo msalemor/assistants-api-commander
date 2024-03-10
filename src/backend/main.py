@@ -48,7 +48,7 @@ def get_status(userName: str):
 
 # Create an Assistant for a user
 @app.post("/api/create", response_model=AssistantCreateResponse)
-def post_load_file(request: AssistantCreateRequest):
+async def create_assistant(request: AssistantCreateRequest):
 
     if request.userName is None or request.userName == "":
         raise HTTPException(
@@ -64,7 +64,7 @@ def post_load_file(request: AssistantCreateRequest):
             status_code=400, detail=".fileURLs missing. No files were provided")
 
     # Create the files
-    file_ids = playground.create_files(
+    file_ids = await playground.create_files(
         client, request.userName, request.fileURLs)
 
     # Create the Assistant and the thread for the user
@@ -83,7 +83,7 @@ def post_load_file(request: AssistantCreateRequest):
 
 # Process a Prompt using the user's Assistant
 @app.post("/api/process", response_model=list[ResponseMessage])
-def post_process(request: PromptRequest):
+async def post_process(request: PromptRequest):
     if request.userName is None or request.userName == "":
         raise HTTPException(
             status_code=400, detail="No user name name was provided. User name is required.")
@@ -116,7 +116,7 @@ def post_process(request: PromptRequest):
         raise HTTPException(
             status_code=404, detail=f"thread not found for user {request.userName}")
 
-    return playground.process_prompt(client, assistant, thread, request.prompt, settings.email_URI, request.userName)
+    return await playground.process_prompt(client, assistant, thread, request.prompt, settings.email_URI, request.userName)
 
 
 # Delete an Assistant

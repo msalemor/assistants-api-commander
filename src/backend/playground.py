@@ -1,6 +1,8 @@
 import base64
 import shutil
 from urllib.parse import urlparse
+import asyncio
+import httpx
 
 import kvstore
 from models import ResponseMessage
@@ -67,26 +69,28 @@ def get_response_messages(client, messages, user_name: str) -> list[ResponseMess
     return response_messages
 
 
-def __read_file_from_url(url) -> bytes | None:
+async def __read_file_from_url(url) -> bytes | None:
     try:
-        resp = requests.get(url, headers={
-                            "content-type": "application/octet-stream"})
-        resp.raise_for_status()
-        fileBytes = resp.content
-        return fileBytes
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(url, headers={"content-type": "application/octet-stream"})
+        #resp = requests.get(url, headers={
+        #                    "content-type": "application/octet-stream"})
+        #resp.raise_for_status()
+            fileBytes = resp.content
+            return fileBytes
     except:
         logging.error("Unable to read file from url: %s", url)
         return None
 
 
-def create_files(client, user_name: str, file_urls: list[str]) -> list[str]:
+async def create_files(client, user_name: str, file_urls: list[str]) -> list[str]:
     # sample file:
     # "https://alemoraoaist.z13.web.core.windows.net/docs/Energy/operating_ranges.csv"
     # "https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv"
     kv_files = []
     for url in file_urls:
         # Read the file contents from the url
-        fileRead = __read_file_from_url(url)
+        fileRead = await __read_file_from_url(url)
 
         # Create the Assistant File from the file contents
         assistant_file = client.files.create(
@@ -232,7 +236,7 @@ def create_assistant(client, user_name: str, name: str, instructions: str, file_
         return (assistant.id, thread.id, str_tools)
 
 
-def process_prompt(client, assistant, thread, prompt, email_uri, user_name: str) -> list[ResponseMessage]:
+async def process_prompt(client, assistant, thread, prompt, email_uri, user_name: str) -> list[ResponseMessage]:
     client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
@@ -264,7 +268,7 @@ def process_prompt(client, assistant, thread, prompt, email_uri, user_name: str)
         elif run.status == "requires_action":
             call_functions(client, thread, run, email_uri)
         else:
-            time.sleep(5)
+            asyncio.sleep(5)
 
 
 def delete_assistant(client, user_name) -> str | None:
