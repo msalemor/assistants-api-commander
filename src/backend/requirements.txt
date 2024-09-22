@@ -1,7 +1,7 @@
 python-dotenv
 fastapi
 pydantic
-uvicorn
+uvicorn[standard]
 yfinance
-openai
+openai==1.46.0
 httpx

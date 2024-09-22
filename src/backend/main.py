@@ -1,10 +1,10 @@
 from fastapi.staticfiles import StaticFiles
-import kvstore
+from assisstantapihelper import AssistantAPIHelper
 from openai import AzureOpenAI
-from models import AssistantCreateRequest, AssistantCreateResponse, ResponseMessage, PromptRequest
+from kvstorehelper import AHMemoryInstance
+from models import AssistantCreateRequest, AssistantCreateResponse, KVStoreItem, ResponseMessage, PromptRequest
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
-import playground
 import logging
 import settings
 # Read the environment variables into settings
@@ -14,16 +14,14 @@ settings = settings.Instance()
 logging.basicConfig(format='%(asctime)s %(message)s',
                     datefmt='%m/%d/%Y %I:%M:%S %p', level=logging.INFO)
 
-# Create the SQLite KV store
-kvstore.create_store()
-
-
 # Create an Azure OpenAI client
-client = AzureOpenAI(api_key=settings.api_key,
-                     api_version=settings.api_version,
-                     azure_endpoint=settings.api_endpoint)
+client = AzureOpenAI(azure_endpoint=settings.api_endpoint,
+                     api_key=settings.api_key,
+                     api_version=settings.assistants_api_version,
+                     )
 
 # Create a FastAPI app
+memories = AHMemoryInstance()
 app = FastAPI()
 
 # Add CORS
@@ -35,20 +33,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Get the Assistant status for a user
-@app.get("/api/status/{userName}", response_model=list[kvstore.KVStoreItem])
-def get_status(userName: str):
-    items = kvstore.get_user(userName)
-    if items is None or items == []:
-        raise HTTPException(
-            status_code=404, detail=f"user {userName} not found")
-    return items
-
-
 # Create an Assistant for a user
+
+
 @app.post("/api/create", response_model=AssistantCreateResponse)
-async def create_assistant(request: AssistantCreateRequest):
+def create_assistant(request: AssistantCreateRequest):
+    """
+    Create an Assistant for a user
+    """
 
     if request.userName is None or request.userName == "":
         raise HTTPException(
@@ -59,31 +51,36 @@ async def create_assistant(request: AssistantCreateRequest):
     if request.instructions is None or request.instructions == "":
         raise HTTPException(
             status_code=400, detail=".instructions were note provided")
-    if request.fileURLs is None or request.fileURLs == []:
-        raise HTTPException(
-            status_code=400, detail=".fileURLs missing. No files were provided")
 
-    # Create the files
-    file_ids = await playground.create_files(
-        client, request.userName, request.fileURLs)
+    ah = AssistantAPIHelper(client)
+    ah.create_assistant(request.userName,
+                        request.name,
+                        request.instructions,
+                        settings.chat_model,
+                        request.ci,
+                        request.ciFileURLs,
+                        request.fs,
+                        request.vs_name,
+                        request.fsFileURLs)
 
-    # Create the Assistant and the thread for the user
-    (assistant_id, thread_id, tools) = playground.create_assistant(client,
-                                                                   request.userName, request.name, request.instructions, file_ids, settings.api_deployment_name)
+    response = AssistantCreateResponse(userName=request.userName,
+                                       name=request.name,
+                                       instructions=request.instructions,
+                                       tools="",
+                                       assistant_id=ah.assistant.id,
+                                       thread_id=ah.thread.id,
+                                       file_ids=ah.file_ids)
 
-    if assistant_id is None or thread_id is None:
-        raise HTTPException(
-            status_code=500, detail="Unable to create the assistant")
-
-    return AssistantCreateResponse(userName=request.userName, name=request.name,
-                                   instructions=request.instructions, tools=tools,
-                                   assistant_id=assistant_id,
-                                   thread_id=thread_id, file_ids=file_ids)
+    return response
 
 
 # Process a Prompt using the user's Assistant
 @app.post("/api/process", response_model=list[ResponseMessage])
-async def post_process(request: PromptRequest):
+def post_process(request: PromptRequest):
+    """
+    Process a prompt using the user's Assistant
+    """
+
     if request.userName is None or request.userName == "":
         raise HTTPException(
             status_code=400, detail="No user name name was provided. User name is required.")
@@ -92,77 +89,105 @@ async def post_process(request: PromptRequest):
         raise HTTPException(
             status_code=400, detail="No prompt was provided. Prompt is required.")
 
-    # Find the assistant for the user
-    user_assistant = kvstore.get_assistant(request.userName)
-    assistant = None
-    if user_assistant is None:
-        raise HTTPException(
-            status_code=404, detail=f"Assistant not found for user {request.userName}")
+    ah = AssistantAPIHelper(client)
     try:
-        assistant = client.beta.assistants.retrieve(user_assistant.value)
+        ah.recall_assistant(request.userName)
     except:
         raise HTTPException(
             status_code=404, detail=f"Assistant not found for user {request.userName}")
 
-    # Find the thread for the user
-    user_thread = kvstore.get_thread(request.userName)
-    thread = None
-    if user_thread is None:
-        raise HTTPException(
-            status_code=404, detail=f"thread not found for user {request.userName}")
-    try:
-        thread = client.beta.threads.retrieve(user_thread.value)
-    except:
-        raise HTTPException(
-            status_code=404, detail=f"thread not found for user {request.userName}")
+    return ah.process({"role": "user", "content": request.prompt})
 
-    return await playground.process_prompt(client, assistant, thread, request.prompt, settings.email_URI, request.userName)
 
+# def delete_objects(user_name: str) -> tuple[str, int]:
+#     try:
+#         kv_items = kvstore.get_user(user_name)
+#         if kv_items is None or kv_items == []:
+#             raise HTTPException(
+#                 status_code=404, detail=f"No objects found for user {user_name}")
+#         for item in kv_items:
+#             match item.key:
+#                 case "assistant":
+#                     try:
+#                         client.beta.threads.delete(item.value)
+#                     except:
+#                         pass
+#                 case "thread":
+#                     try:
+#                         client.beta.assistants.delete(item.value)
+#                     except:
+#                         pass
+#                 case "file":
+#                     try:
+#                         client.files.delete(item.value)
+#                     except:
+#                         pass
+#                 case _:
+#                     pass
+#         count = kvstore.del_user(user_name)
+#         if count > 0:
+#             return f"Assistant deleted for user: {user_name}", 200
+#         else:
+#             return f"User {user_name} not found", 404
+#     except:
+#         return f"Unable to delete assistant", 500
 
 # Delete an Assistant
+
+
 @app.delete("/api/delete/{userName}")
 def delete(userName: str):
-    error = playground.delete_assistant(client, userName)
-    if error is not None:
+    ah = AssistantAPIHelper(client)
+    try:
+        ah.recall_assistant(userName)
+        ah.cleanup(userName)
+    except:
         raise HTTPException(
-            status_code=404, detail=f"User {userName} note found")
-
-    # Delete the KVStore entries for the user
-    count = kvstore.del_user(userName)
-    if count > 0:
-        return {"message": f"Assistant deleted for user: {userName}"}
-    else:
-        raise HTTPException(
-            status_code=404, detail=f"User {userName} not found")
+            status_code=404, detail=f"Assistant not found for user {userName}")
 
 
-# Maintenance routes
 # Delete all Assistants
 @app.delete("/api/delete")
 def delete_all():
+    """
+    Delete all Assistants
+    """
 
-    kv_all_users = kvstore.get_all_user()
-    # Delete all the Assistants for all users
+    kv_all_users = memories.get_all_users()
     for user in kv_all_users:
-        userName = user.value
-        error = playground.delete_assistant(client, userName)
-        if error is not None:
-            raise HTTPException(
-                status_code=404, detail=f"User {userName} note found")
+        # delete_objects(user.username)
+        ah = AssistantAPIHelper(client)
+        try:
+            ah.recall_assistant(user.category)
+            ah.cleanup(user.category)
+        except:
+            logging.error(
+                f"Assistant not found for user {user.category} but exits in the database")
+            memories.del_user(user.category)
 
-        # Delete the KVStore entries for the user
-        count = kvstore.del_user(userName)
-        if count > 0:
-            return {"message": f"Assistant deleted for user: {userName}"}
-        else:
-            raise HTTPException(
-                status_code=404, detail=f"User {userName} not found")
+
+# Get the Assistant status for a user
+@app.get("/api/status/{userName}", response_model=list[KVStoreItem])
+def get_status(userName: str):
+    """
+    Get the Assistant status for a user
+    """
+
+    items = memories.get_user(userName)
+    if items is None or items == []:
+        raise HTTPException(
+            status_code=404, detail=f"user {userName} not found")
+    return items
 
 
 # Get all status for all users
-@app.get("/api/status", response_model=list[kvstore.KVStoreItem])
+@app.get("/api/status", response_model=list[KVStoreItem])
 def get_all_status():
-    items = kvstore.get_all_user()
+    """
+    Get all status for all users
+    """
+
+    items = memories.get_all_users()
     if items is None or items == []:
         raise HTTPException(
             status_code=404, detail=f"There are no users in the database")
@@ -172,3 +197,8 @@ def get_all_status():
 # Show the static files
 if settings.deploy_spa == "True":
     app.mount("/", StaticFiles(directory="wwwroot", html=True), name="site")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app)

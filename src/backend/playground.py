@@ -15,8 +15,9 @@ import json
 import time
 from datetime import datetime
 
-from openai.types.beta.threads.message_content_text import MessageContentText
-from openai.types.beta.threads.message_content_image_file import MessageContentImageFile
+from openai.types.beta.assistant import Assistant
+from openai.types.beta.threads.text_content_block import TextContentBlock
+from openai.types.beta.threads.image_file_content_block import ImageFileContentBlock
 
 
 def __user_folders(user_name: str):
@@ -37,12 +38,12 @@ def get_response_messages(client, messages, user_name: str) -> list[ResponseMess
     response_messages = []
     for message in message_list:
         for item in message.content:
-            if isinstance(item, MessageContentText):
+            if isinstance(item, TextContentBlock):
                 if item.text.value is None or item.text.value == "":
                     continue
                 response_messages.append(
                     ResponseMessage(role=message.role, content=item.text.value))
-            elif isinstance(item, MessageContentImageFile):
+            elif isinstance(item, ImageFileContentBlock):
                 # Retrieve image from file by id
                 response_content = client.files.content(
                     item.image_file.file_id)
@@ -73,9 +74,9 @@ async def __read_file_from_url(url) -> bytes | None:
     try:
         async with httpx.AsyncClient() as client:
             resp = await client.get(url, headers={"content-type": "application/octet-stream"})
-        #resp = requests.get(url, headers={
+        # resp = requests.get(url, headers={
         #                    "content-type": "application/octet-stream"})
-        #resp.raise_for_status()
+        # resp.raise_for_status()
             fileBytes = resp.content
             return fileBytes
     except:
@@ -84,6 +85,8 @@ async def __read_file_from_url(url) -> bytes | None:
 
 
 async def create_files(client, user_name: str, file_urls: list[str]) -> list[str]:
+    if len(file_urls) == 0:
+        return []
     # sample file:
     # "https://alemoraoaist.z13.web.core.windows.net/docs/Energy/operating_ranges.csv"
     # "https://alemoraoaist.z13.web.core.windows.net/docs/Energy/wind_turbines_telemetry.csv"
@@ -167,11 +170,11 @@ def call_functions(client, thread, run, email_URI: str):
 
 
 def create_assistant(client, user_name: str, name: str, instructions: str, file_ids: list[str], api_deployment_name: str):
-    assistant = None
+    assistant: Assistant = None
     try:
         id = kvstore.get_assistant(user_name)
         if id is not None:
-            assistant = client.beta.assistants.retrieve(id)
+            assistant: Assistant = client.beta.assistants.retrieve(id)
             if assistant is None:
                 raise Exception("Assistant not found")
         else:
@@ -220,10 +223,20 @@ def create_assistant(client, user_name: str, name: str, instructions: str, file_
         # Create the Assistant for the user and files
         assistant = client.beta.assistants.create(
             name=name,
+            model=api_deployment_name,
             instructions=instructions,
             tools=tools_list,
-            model=api_deployment_name,
-            file_ids=file_ids
+            tool_resources={
+                "code_interpreter": {
+                    "file_ids": file_ids
+                }
+            }
+            # file_ids=file_ids
+            # tool_resources={
+            #     "code_interpreter": {
+            #         "file_ids": file_ids
+            #     }
+            # }
         )
         # Update the user's state
         str_tools = json.dumps(tools_list)
@@ -240,7 +253,7 @@ async def process_prompt(client, assistant, thread, prompt, email_uri, user_name
     client.beta.threads.messages.create(
         thread_id=thread.id,
         role="user",
-        content=prompt
+        content=prompt,
     )
 
     run = client.beta.threads.runs.create(

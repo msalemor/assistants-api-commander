@@ -1,7 +1,10 @@
 __pycache__
 .env
 wwwroot/*
+!wwwroot/.gitkeep
 data/*
+!data/.gitkeep
 requests.http
 .python-version
 .venv
+kvstore.*

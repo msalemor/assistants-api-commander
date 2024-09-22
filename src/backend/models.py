@@ -23,10 +23,13 @@ class PromptRequest(BaseModel):
 
 class AssistantCreateRequest(BaseModel):
     userName: str
-    name: str
-    instructions: str
-    fileURLs: list[str]
-    userName: str
+    name: str = "Assistant API assistant"
+    instructions: str = "You are a general AI assistant."
+    ci: bool = True
+    ciFileURLs: list[str] = []
+    fs: bool = False
+    vs_name: str = "vector store name"
+    fsFileURLs: list[str] = []
 
 
 class AssistantCreateResponse(BaseModel):
@@ -43,3 +46,10 @@ class ResponseMessage(BaseModel):
     role: str
     content: str | None
     imageContent: str | None = None
+    citations: list | None = None
+
+
+class KVStoreItem(BaseModel):
+    category: str
+    key: str
+    value: str

@@ -2,13 +2,7 @@ import logging
 import sqlite3
 import json
 import uuid
-from pydantic import BaseModel
-
-
-class KVStoreItem(BaseModel):
-    username: str
-    key: str
-    value: str
+from models import KVStoreItem
 
 
 conn = sqlite3.connect("data/kvstore.db", check_same_thread=False)
@@ -27,7 +21,7 @@ def __read_value(username, key) -> KVStoreItem | None:
         cursor.execute("SELECT username, key, value FROM kvstore WHERE username=? AND key=?",
                        (username, key))
         result = cursor.fetchone()
-        kv = KVStoreItem(username=result[0], key=result[1], value=result[2])
+        kv = KVStoreItem(category=result[0], key=result[1], value=result[2])
         if result is None:
             return None
         return kv
@@ -54,7 +48,7 @@ def __read_values(username: str, key: str) -> list[KVStoreItem]:
         kv_list = []
         for row in result:
             kv_list.append(KVStoreItem(
-                username=row[0], key=row[1], value=row[2]))
+                category=row[0], key=row[1], value=row[2]))
 
         cursor.close()
 
@@ -79,7 +73,7 @@ def __upsert_value(username: str, key: str, value: str) -> KVStoreItem:
                        (username, key, value))
         conn.commit()
         logging.info(f"Value set: {username} {key} {value}")
-        return KVStoreItem(username=username, key=key, value=value)
+        return KVStoreItem(category=username, key=key, value=value)
     except:
         logging.error(f"Failed to set value for {username} {key} {value}")
         return None
@@ -150,7 +144,7 @@ def delete_file(username: str, file_id: str) -> int:
     return __delete_value(username, file_id)
 
 
-def get_all_user() -> list[KVStoreItem]:
+def get_all_user(username, key) -> list[KVStoreItem]:
     cursor = conn.cursor()
     try:
         cursor.execute(
@@ -162,7 +156,7 @@ def get_all_user() -> list[KVStoreItem]:
         kv_list = []
         for row in result:
             kv_list.append(KVStoreItem(
-                username=row[0], key=row[1], value=row[2]))
+                category=row[0], key=row[1], value=row[2]))
 
         cursor.close()
         return kv_list
