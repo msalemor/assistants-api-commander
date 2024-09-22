@@ -112,6 +112,7 @@ function App() {
         prompt: prompt()
       }
       setProcessing(true)
+      setPrompt('')
       const response = await axios.post<IResponseMessage[]>(POST_PROCESS, payload)
       const additional_messages = response.data
       setThreadMessages([...threadMessages(), ...additional_messages])
@@ -164,7 +165,7 @@ function App() {
     let sampleSettings: ISettings = {
       user: '',
       name: 'Personal Assistant',
-      instructions: 'You are an Assistant that can help analyze and perform calculations using the provided files. Use only the  data in this file Be polite, friendly, and helpful. After answering a user\'s question, say, "Can I be of further assistance."',
+      instructions: 'You are a general AI assistant. Be polite and helpful.',
       ci: false,
       ciFileURLs: '',
       fs: false,
@@ -208,38 +209,47 @@ function App() {
       return 'bg-red-600'
 
     if (runningAssistant().assistant_id === '')
-      return 'bg-slate-500'
+      return 'bg-slate-500 dark:bg-slate-900'
     else
       return 'bg-slate-900'
   }
 
   const forceDelete = async () => {
+    setProcessing(true)
     try {
       await axios.delete(FORCE_DELETE_ASSISTANT)
     } catch (err) {
       console.log(err)
     }
+    finally {
+      setSettings(Settings)
+      setThreadMessages([])
+      setPrompt('')
+      setProcessing(false)
+    }
   }
 
   return (
     <>
-      <header class="bg-slate-950 text-white p-3 text-2xl font-bold h-[60px]">Assistants API Commander</header>
-      <div class="flex flex-row h-[calc(100vh-100px)]">
-        <aside class="bg-slate-200 p-2 w-1/4 overflow-auto">
+      <header class="bg-slate-950 h-[45px] flex items-center">
+        <h1 class='text-white p-3 text-xl font-bold'>Assistants API Commander</h1>
+      </header>
+      <div class="flex flex-row h-[calc(100vh-80px)]">
+        <aside class="bg-slate-200 p-2 w-1/4 overflow-auto dark:bg-slate-800 dark:text-white">
           <div class="flex flex-col p-3 space-y-2">
             <label class="uppercase font-bold border-b-2 border-slate-800 text-lg">Assistant Settings</label>
             <label class="uppercase font-semibold">Email Address:</label>
-            <input class='p-1 outline-none' type="email"
+            <input class='p-1 outline-none dark:text-black' type="email"
               onchange={(e) => setSettings({ ...settings(), user: e.target.value })}
               value={settings().user}
             />
             <label class="uppercase font-semibold">Assistant Name:</label>
-            <input class='p-1 outline-none' type="text"
+            <input class='p-1 outline-none dark:text-black' type="text"
               onchange={(e) => setSettings({ ...settings(), name: e.target.value })}
               value={settings().name}
             />
             <label class="uppercase font-semibold">Instructions:</label>
-            <textarea class='p-1 outline-none resize-none'
+            <textarea class='p-1 outline-none resize-none dark:text-black'
               rows={4}
               onchange={(e) => setSettings({ ...settings(), instructions: e.target.value })}
               value={settings().instructions}
@@ -256,17 +266,22 @@ function App() {
               >Off</button>
             </div>
             <textarea
-              class='p-1 outline-none resize-none'
+              class='p-1 outline-none resize-none dark:text-black'
               rows={4}
               onchange={(e) => setSettings({ ...settings(), ciFileURLs: e.target.value })}
               value={settings().ciFileURLs}
             />
             <div class='space-x-1 text-sm font-semibold'>
               <span>Samples:</span>
-              <button class="text-blue-600 hover:underline hover:font-semibold"
+              <button class="text-blue-600 dark:text-blue-200 hover:underline hover:font-semibold"
                 onclick={() => LoadSampleData('banking')}
                 disabled={runningAssistant().assistant_id !== ''}
               >Banking</button>
+              <span>|</span>
+              <button class="text-blue-600 dark:text-blue-200 hover:underline hover:font-semibold"
+                onclick={() => LoadSampleData('energy')}
+                disabled={runningAssistant().assistant_id !== ''}
+              >Energy</button>
             </div>
             <div class='flex'><label class="uppercase font-semibold">File Search File URLs: <span><IoInformationCircleOutline class='inline-block' title='You can provide a comma separated list of files.' /></span></label></div>
             <div class='flex space-x-1 text-sm'>
@@ -278,25 +293,26 @@ function App() {
               >Off</button>
             </div>
             <textarea
-              class='p-1 outline-none resize-none'
+              class='p-1 outline-none resize-none dark:text-black'
               rows={4}
               onchange={(e) => setSettings({ ...settings(), fsFileURLs: e.target.value })}
               value={settings().fsFileURLs}
             />
+            <div class='space-x-1 text-sm font-semibold'>
+              <span>Sample:</span>
+              <button class="text-blue-600 dark:text-blue-200 hover:underline hover:font-semibold"
+                onclick={() => LoadSampleData('faq')}
+                disabled={runningAssistant().assistant_id !== ''}
+              >FAQ</button>
+            </div>
           </div>
-          <div class='px-3 space-x-1 text-sm font-semibold'>
-            <span>Sample:</span>
-            <button class="text-blue-600 hover:underline hover:font-semibold"
-              onclick={() => LoadSampleData('faq')}
-              disabled={runningAssistant().assistant_id !== ''}
-            >FAQ</button>
-          </div>
+
           <div class="flex flex-row space-x-2 p-3">
-            <button class='w-20 p-2 bg-blue-600 text-white font-semibold disabled:bg-slate-500'
+            <button class='text-sm p-2 bg-blue-600 hover:bg-blue-700 hover:cursor-pointer text-white font-semibold disabled:bg-slate-500'
               onclick={CreateAssistant}
               disabled={runningAssistant().assistant_id !== ''}
             >Create</button>
-            <button class='w-20 p-2 bg-blue-600 text-white font-semibold disabled:bg-slate-500'
+            <button class='text-sm p-2 bg-blue-600 hover:bg-blue-700 hover:cursor-pointer text-white font-semibold disabled:bg-slate-500'
               onclick={DeleteAssistant}
               disabled={runningAssistant().assistant_id === ''}
             >Delete</button>
@@ -307,8 +323,11 @@ function App() {
           </div>
           <div class="flex flex-col p-3 space-y-2">
             <label class="uppercase font-bold border-b-2 border-slate-800 text-lg">Available Tools</label>
-            <span class='bg-slate-700 text-white rounded-xl p-1 w-24'>Stock Prices</span>
-            <span class='bg-slate-700 text-white rounded-xl p-1 w-24'>Email</span>
+            <div class='flex flex-wrap'>
+              <span class='m-1 bg-slate-700 text-white rounded-xl p-2'>Stock&nbsp;Prices</span>
+              <span class='m-1 bg-slate-700 text-white rounded-xl p-2'>Simulated&nbsp;Weather</span>
+              {/* <span class='m-1 bg-slate-700 text-white rounded-xl p-2 w-24'>Email</span> */}
+            </div>
             {/*<label class="uppercase font-bold border-b-2 border-slate-800 text-lg">Uploaded Files</label>
             <For each={runningAssistant().files}>
               {(file) => (
@@ -320,32 +339,33 @@ function App() {
             </For>*/}
           </div>
         </aside >
-        <main class="p-3 w-3/4 flex flex-col overflow-auto">
-          <div class="flex flex-col">
-            <div class="flex flex-row rounded-lg overflow-clip">
-              <textarea class='outline-none p-2 w-full bg-blue-100'
-                onchange={(e) => setPrompt(e.target.value)}
-                value={prompt()}
-                onkeydown={(e) => { if (e.key === 'Enter' && e.ctrlKey) Process() }}
-                rows={5}></textarea>
-              <button class='px-3 bg-blue-400 hover:bg-blue-700 font-semibold text-white'
-                onclick={Process}
-              ><IoSend /></button>
-            </div>
-            <div class='flex flex-col w-full space-y-2 mt-4'>
+        <main class="p-3 w-3/4 flex flex-col dark:bg-slate-700">
+          <div class="flex flex-col h-[calc(100vh-35px-45px-20px)]">
+            <div class='w-full h-full space-y-2 overflow-auto'>
               <For each={threadMessages()}>
                 {(message) => (<>
-                  <div class={'w-[90%] p-1 rounded ' + (message.role !== "user" ? "bg-blue-300" : "bg-blue-400 ml-auto")}>
+                  <div class={'w-[90%] p-2 rounded dark:text-white ' + (message.role !== "user" ? "bg-blue-300 dark:bg-slate-600" : "bg-blue-400 ml-auto dark:bg-slate-800")}>
                     <SolidMarkdown children={message.content} />
                   </div>
                   <img class='w-[90%]' src={message.imageContent} alt="" />
                 </>)}
               </For>
             </div>
+            <div class="flex flex-row rounded-lg overflow-clip mt-2">
+              <textarea class='outline-none p-2 w-full bg-blue-100 dark:bg-slate-800 dark:text-white resize-none'
+                onchange={(e) => setPrompt(e.target.value)}
+                value={prompt()}
+                onkeydown={(e) => { if (e.key === 'Enter' && e.ctrlKey) Process() }}
+                rows={4}></textarea>
+              <button class='px-3 bg-blue-400 hover:bg-blue-700 dark:bg-slate-900 dark:hover:bg-slate-950 font-semibold text-white'
+                onclick={Process}
+              ><IoSend /></button>
+            </div>
           </div >
         </main >
       </div >
-      <section class={"flex flex-wrap text-sm space-x-2 items-center h-[40px] text-white " + StatusBarColor()}>
+      <footer class={"flex flex-wrap text-xs space-x-2 items-center h-[35px] text-white " + StatusBarColor()}>
+        <span class={"bg-blue-600 p-2 text-white uppercase " + (runningAssistant().assistant_id ? "hidden" : "visible")}>Create an assistant</span>
         <span class={"bg-green-700 p-2 text-white uppercase " + (runningAssistant().assistant_id ? "visible" : "hidden")}>Assistant Loaded</span>
         <div class='space-x-2 p-2'><label class='uppercase font-semibold'>Assistant ID:</label><span class='p-1 bg-slate-800 text-white'>{runningAssistant().assistant_id}</span></div>
         <div class='space-x-2 p-2'><label class='uppercase font-semibold'>Thread ID:</label><span class='p-1 bg-slate-800 text-white'>{runningAssistant().thread_id}</span></div>
@@ -357,10 +377,10 @@ function App() {
           onClick={() => { setSettings(Settings); setThreadMessages([]); setPrompt('') }}
         >Reset</button>
         <button class='bg-red-700 text-white p-1 rounded'
-          onClick={() => { forceDelete(); setSettings(Settings); setThreadMessages([]); setPrompt('') }}
+          onClick={forceDelete}
         >Force Delete</button>
         <span class={(processing() ? "visible" : "hidden")}><Spinner type={SpinnerType.puff} color="white" height={25} /></span>
-      </section >
+      </footer >
     </>
   )
 }
