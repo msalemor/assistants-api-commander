@@ -20,6 +20,7 @@ const Settings: ISettings = {
   user: '',
   name: '',
   instructions: '',
+  useTools: true,
   ci: true,
   ciFileURLs: '',
   fs: false,
@@ -77,13 +78,14 @@ function App() {
       userName: settings().user,
       name: settings().name,
       instructions: settings().instructions,
+      useTools: settings().useTools,
       ci: settings().ci,
       ciFileURLs: settings().ciFileURLs.split(',').map((file) => file.trim()),
       fs: settings().fs,
       vs_name: settings().vs_name,
       fsFileURLs: settings().fsFileURLs.split(',').map((file) => file.trim()),
     }
-    //alert(JSON.stringify(payload))
+    alert(JSON.stringify(payload))
     try {
       const response = await axios.post<IAssistantCreateResponse>(POST_CREATE, payload)
       const data = response.data
@@ -166,6 +168,7 @@ function App() {
       user: '',
       name: 'Personal Assistant',
       instructions: 'You are a general AI assistant. Be polite and helpful.',
+      useTools: true,
       ci: false,
       ciFileURLs: '',
       fs: false,
@@ -322,7 +325,15 @@ function App() {
             >Sample</button> */}
           </div>
           <div class="flex flex-col p-3 space-y-2">
-            <label class="uppercase font-bold border-b-2 border-slate-800 text-lg">Available Tools</label>
+            <label class="uppercase font-bold border-b-2 border-slate-800 text">Available Tools</label>
+            <div class='flex space-x-1 text-sm'>
+              <button class={'text-white p-1 ' + (settings().useTools ? "bg-green-600" : "bg-slate-600")}
+                onClick={() => setSettings({ ...settings(), useTools: true })}
+              >On</button>
+              <button class={'text-white p-1 ' + (!settings().useTools ? "bg-green-600" : "bg-slate-600")}
+                onclick={() => setSettings({ ...settings(), useTools: false })}
+              >Off</button>
+            </div>
             <div class='flex flex-wrap'>
               <span class='m-1 bg-slate-700 text-white rounded-xl p-2'>Stock&nbsp;Prices</span>
               <span class='m-1 bg-slate-700 text-white rounded-xl p-2'>Simulated&nbsp;Weather</span>
