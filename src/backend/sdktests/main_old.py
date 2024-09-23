@@ -1,5 +1,5 @@
 from fastapi.staticfiles import StaticFiles
-import kvstore
+import sdktests.kvstore as kvstore
 from openai import AzureOpenAI
 from models import AssistantCreateRequest, AssistantCreateResponse, ResponseMessage, PromptRequest
 from fastapi.middleware.cors import CORSMiddleware

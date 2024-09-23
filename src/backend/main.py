@@ -1,7 +1,7 @@
 from fastapi.staticfiles import StaticFiles
 from assisstantapihelper import AssistantAPIHelper
 from openai import AzureOpenAI
-from kvstorehelper import AHMemoryInstance
+from ckvstorehelper import AHMemoryInstance
 from models import AssistantCreateRequest, AssistantCreateResponse, KVStoreItem, ResponseMessage, PromptRequest
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException
@@ -57,6 +57,7 @@ def create_assistant(request: AssistantCreateRequest):
                         request.name,
                         request.instructions,
                         settings.chat_model,
+                        request.useTools,
                         request.ci,
                         request.ciFileURLs,
                         request.fs,
@@ -99,44 +100,11 @@ def post_process(request: PromptRequest):
     return ah.process({"role": "user", "content": request.prompt})
 
 
-# def delete_objects(user_name: str) -> tuple[str, int]:
-#     try:
-#         kv_items = kvstore.get_user(user_name)
-#         if kv_items is None or kv_items == []:
-#             raise HTTPException(
-#                 status_code=404, detail=f"No objects found for user {user_name}")
-#         for item in kv_items:
-#             match item.key:
-#                 case "assistant":
-#                     try:
-#                         client.beta.threads.delete(item.value)
-#                     except:
-#                         pass
-#                 case "thread":
-#                     try:
-#                         client.beta.assistants.delete(item.value)
-#                     except:
-#                         pass
-#                 case "file":
-#                     try:
-#                         client.files.delete(item.value)
-#                     except:
-#                         pass
-#                 case _:
-#                     pass
-#         count = kvstore.del_user(user_name)
-#         if count > 0:
-#             return f"Assistant deleted for user: {user_name}", 200
-#         else:
-#             return f"User {user_name} not found", 404
-#     except:
-#         return f"Unable to delete assistant", 500
-
-# Delete an Assistant
-
-
 @app.delete("/api/delete/{userName}")
 def delete(userName: str):
+    """
+    Delete an Assistant for a user
+    """
     ah = AssistantAPIHelper(client)
     try:
         ah.recall_assistant(userName)

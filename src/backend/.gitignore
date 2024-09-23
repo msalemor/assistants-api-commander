@@ -7,4 +7,4 @@ data/*
 requests.http
 .python-version
 .venv
-kvstore.*
+kvstore.db

@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 import asyncio
 import httpx
 
-import kvstore
+import sdktests.kvstore as kvstore
 from models import ResponseMessage
 import tools
 import requests

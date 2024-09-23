@@ -25,6 +25,7 @@ class AssistantCreateRequest(BaseModel):
     userName: str
     name: str = "Assistant API assistant"
     instructions: str = "You are a general AI assistant."
+    useTools: bool = True
     ci: bool = True
     ciFileURLs: list[str] = []
     fs: bool = False

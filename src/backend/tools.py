@@ -5,11 +5,11 @@ import requests
 import logging
 
 
-def get_stock_price(symbol: str) -> float:
+def get_stock_price(symbol: str) -> str:
     logging.info(f"Getting stock price for {symbol}")
     stock = yf.Ticker(symbol)
     price = stock.history(period="1d")['Close'].iloc[-1]
-    return price
+    return str(price)
 
 
 def send_logic_apps_email(email_url: str, to: str, content: str):

@@ -1,7 +1,7 @@
 import json
 from openai import AzureOpenAI
 from assisstantapihelper import AssistantAPIHelper as Helper
-from kvstorehelper import AHMemoryInstance
+from ckvstorehelper import AHMemoryInstance
 import settings
 
 settings = settings.Instance()

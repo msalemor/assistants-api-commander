@@ -1,7 +1,9 @@
-import io
+import json
 import logging
 import os
+import random
 import shutil
+from time import sleep
 from urllib.parse import urlparse
 import uuid
 import httpx
@@ -9,14 +11,23 @@ from openai import AzureOpenAI
 from openai.types.beta.assistant import Assistant
 from openai.types.beta.threads.text_content_block import TextContentBlock
 from openai.types.beta.threads.image_file_content_block import ImageFileContentBlock
-from kvstorehelper import AHMemory
+from ckvstorehelper import AHMemory
 from models import ResponseMessage
-import kvstore
+from tools import get_stock_price
 
 
 def user_folders(user_name: str):
     kvitem_user_id = user_name
     return (f"wwwroot/images/{kvitem_user_id}/", f"images/{kvitem_user_id}/")
+
+
+def get_current_temperature(location: str, unit: str) -> str:
+    if unit and unit == "":
+        return f"Unable to get the temperature for {location}"
+    if unit and unit != "" and (unit.lower() == "farenheight" or unit.lower() == "f"):
+        return f"Temperature at {location} is {str(random.randint(60,90))} {unit}"
+    else:
+        return f"Temperature at {location} is {str(random.randint(12,30))} {unit}"
 
 
 class AssistantAPIHelper:
@@ -105,7 +116,15 @@ class AssistantAPIHelper:
         # Return the file ids
         return file_ids
 
-    def create_assistant(self, user_name: str, name: str, instructions: str, model: str, use_ci: bool = False, code_files: list[str] = [], use_fs: bool = False, vs_name: str = 'Vector store', search_files: list[str] = []) -> tuple[str, str, str]:
+    def create_assistant(self, user_name: str,
+                         name: str, instructions: str, model: str,
+                         use_tools: bool = True, use_ci: bool = False, code_files: list[str] = [],
+                         use_fs: bool = False, vs_name: str = 'Vector store',
+                         search_files: list[str] = []) -> tuple[str, str, str]:
+        """
+        Create an OpenAI Assistant with the given parameters
+        """
+
         self.assistant = self.client.beta.assistants.create(
             name=name,
             instructions=instructions,
@@ -114,6 +133,49 @@ class AssistantAPIHelper:
 
         tools = []
         tool_resources = {}
+
+        if use_tools:
+            tools = [
+                {
+                    "type": "function",
+                            "function": {
+                                "name": "get_current_temperature",
+                                "description": "Get the current temperature for a specific location",
+                                "parameters": {
+                                    "type": "object",
+                                    "properties": {
+                                        "location": {
+                                            "type": "string",
+                                            "description": "The city and state, e.g., San Francisco, CA"
+                                        },
+                                        "unit": {
+                                            "type": "string",
+                                            "enum": ["Celsius", "Fahrenheit"],
+                                            "description": "The temperature unit to use. Infer this from the user's location."
+                                        }
+                                    },
+                                    "required": ["location", "unit"]
+                                }
+                            }
+                },
+                {
+                    "type": "function",
+                            "function": {
+                                "name": "get_stock_price",
+                                "description": "Get the the current stock price for a specific company",
+                                "parameters": {
+                                    "type": "object",
+                                    "properties": {
+                                        "symbol": {
+                                            "type": "string",
+                                            "description": "The stock symbol, e.g., AAPL"
+                                        }
+                                    },
+                                    "required": ["symbol"]
+                                }
+                            }
+                }
+            ]
 
         if use_ci:
             tools.append({"type": "code_interpreter"})
@@ -227,15 +289,15 @@ class AssistantAPIHelper:
         try:
             if self.vector_store is not None:
                 self.client.beta.vector_stores.delete(self.vector_store.id)
-        except:
-            logging.error("Unable to delete vector store")
+        except Exception as e:
+            logging.error("Unable to delete vector store", e)
 
     def delete_assistant(self):
         try:
             if self.assistant is not None:
-                self.client.beta.assistants.delete(self.assisant.id)
-        except:
-            logging.error("Unable to delete assistant")
+                self.client.beta.assistants.delete(self.assistant.id)
+        except Exception as e:
+            logging.error("Unable to delete assistant", e)
 
     def cleanup(self, user_name: str):
         self.delete_thread()
@@ -291,8 +353,52 @@ class AssistantAPIHelper:
                         response_messages.append(
                             ResponseMessage(role=message.role, content="", imageContent=f"{url_path}"))
                         # ResponseMessage(role=message.role, content="", imageContent="data:image/png;base64,"+imageContent))
+
+        # message_content = messages[0].content[0].text
+        # annotations = message_content.annotations
+        # citations = []
+        # for index, annotation in enumerate(annotations):
+        #     message_content.value = message_content.value.replace(
+        #         annotation.text, f"[{index}]")
+        #     if file_citation := getattr(annotation, "file_citation", None):
+        #         cited_file = self.client.files.retrieve(file_citation.file_id)
+        #         citations.append(f"[{index}] {cited_file.filename}")
+
+        # print(message_content.value)
+        # print("\n".join(citations))
+
         # Return the list of ResponseMessages
         return response_messages
+
+    def call_functions(self, run):
+        logging.info("Calling tools")
+        tool_outputs = []
+        for tool in run.required_action.submit_tool_outputs.tool_calls:
+            if tool.function.name == "get_current_temperature":
+                arguments = json.loads(tool.function.arguments)
+                output = get_current_temperature(
+                    location=arguments['location'], unit=arguments['unit'])
+                tool_outputs.append({
+                    "tool_call_id": tool.id,
+                    "output": output
+                })
+            elif tool.function.name == "get_stock_price":
+                arguments = json.loads(tool.function.arguments)
+                output = get_stock_price(arguments['symbol'])
+                tool_outputs.append({
+                    "tool_call_id": tool.id,
+                    "output": output
+                })
+            else:
+                # raise ValueError(f"Unknown function: {func_name}")
+                logging.error(f"Unknown function: {tool.function.name}")
+
+        logging.info("Submitting outputs back to the Assistant...")
+        self.client.beta.threads.runs.submit_tool_outputs(
+            thread_id=self.thread.id,
+            run_id=run.id,
+            tool_outputs=tool_outputs
+        )
 
     def process(self, message: dict, managed: bool = True) -> list:
         """
@@ -323,29 +429,36 @@ class AssistantAPIHelper:
                 messages=[message]
             )
 
-        run = self.client.beta.threads.runs.create_and_poll(
+        # run = self.client.beta.threads.runs.create_and_poll(
+        #     thread_id=self.thread.id, assistant_id=self.assistant.id
+        # )
+
+        # Create the run but dont wait
+        run = self.client.beta.threads.runs.create(
             thread_id=self.thread.id, assistant_id=self.assistant.id
         )
 
-        messages = list(self.client.beta.threads.messages.list(
-            thread_id=self.thread.id, run_id=run.id))
+        while True:
+            # Check the status
+            if run.status == "failed" or run.status == "cancelled" or run.status == "incomplete":
+                return []
+            if run.status == "completed":
+                messages = list(self.client.beta.threads.messages.list(
+                    thread_id=self.thread.id, run_id=run.id))
 
-        # message_content = messages[0].content[0].text
-        # annotations = message_content.annotations
-        # citations = []
-        # for index, annotation in enumerate(annotations):
-        #     message_content.value = message_content.value.replace(
-        #         annotation.text, f"[{index}]")
-        #     if file_citation := getattr(annotation, "file_citation", None):
-        #         cited_file = self.client.files.retrieve(file_citation.file_id)
-        #         citations.append(f"[{index}] {cited_file.filename}")
+                processed_messages = self.get_response_messages(messages)
 
-        # print(message_content.value)
-        # print("\n".join(citations))
+                if not managed:
+                    self.client.beta.threads.delete(self.thread.id)
 
-        processed_messages = self.get_response_messages(messages)
+                return processed_messages
+            elif run.status == "requires_action":
+                # Called defined functions
+                self.call_functions(run)
 
-        if not managed:
-            self.client.beta.threads.delete(self.thread.id)
+            run = self.client.beta.threads.runs.retrieve(
+                run.id, thread_id=self.thread.id)
 
-        return processed_messages
+            sleep(.5)
+
+        return []
