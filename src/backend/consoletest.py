@@ -20,11 +20,19 @@ ah = Helper(client)
 ah.cleanup(user_name)
 
 # create a new assistant
-ah.create_assistant(user_name, "name", "instructions",
+ah.create_assistant(user_name,
+                    # name of the agent
+                    "Console Agent",
+                    # system prompt instructions
+                    "You are a general AI assistant. Be polite and helpful.",
+                    # GPT model
                     settings.chat_model,
-                    True,  # use Function Calling
-                    True,  # Use Code interpreter
-                    [],  # Code interpreter file urls
+                    # use Function Calling
+                    True,
+                    # Use Code interpreter
+                    True,
+                    # Code interpreter file urls
+                    [],
                     False,  # use File Search
                     "",  # File Search store name
                     [])  # File Search file urls
