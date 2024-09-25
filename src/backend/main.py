@@ -1,10 +1,11 @@
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from assisstantapihelper import AssistantAPIHelper
 from openai import AzureOpenAI
 from ckvstorehelper import AHMemoryInstance
 from models import AssistantCreateRequest, AssistantCreateResponse, KVStoreItem, ResponseMessage, PromptRequest
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 import logging
 import settings
 # Read the environment variables into settings
@@ -21,7 +22,7 @@ client = AzureOpenAI(azure_endpoint=settings.api_endpoint,
                      )
 
 # Create a FastAPI app
-memories = AHMemoryInstance()
+memory_store = AHMemoryInstance()
 app = FastAPI()
 
 # Add CORS
@@ -121,7 +122,7 @@ def delete_all():
     Delete all Assistants
     """
 
-    kv_all_users = memories.get_all_users()
+    kv_all_users = memory_store.get_all_users()
     for user in kv_all_users:
         # delete_objects(user.username)
         ah = AssistantAPIHelper(client)
@@ -131,7 +132,7 @@ def delete_all():
         except:
             logging.error(
                 f"Assistant not found for user {user.category} but exits in the database")
-            memories.del_user(user.category)
+            memory_store.del_user(user.category)
 
 
 # Get the Assistant status for a user
@@ -141,7 +142,7 @@ def get_status(userName: str):
     Get the Assistant status for a user
     """
 
-    items = memories.get_user(userName)
+    items = memory_store.get_user(userName)
     if items is None or items == []:
         raise HTTPException(
             status_code=404, detail=f"user {userName} not found")
@@ -155,11 +156,19 @@ def get_all_status():
     Get all status for all users
     """
 
-    items = memories.get_all_users()
+    items = memory_store.get_all_users()
     if items is None or items == []:
         raise HTTPException(
             status_code=404, detail=f"There are no users in the database")
     return items
+
+
+@app.post("/api/upload/{area}")
+async def upload_file(area: str, file: UploadFile = File(...)):
+    print(area, file)
+    # with open(file.filename, "wb") as buffer:
+    #     buffer.write(await file.read())
+    return JSONResponse(content={"filename": file.filename}, status_code=200)
 
 
 # Show the static files
