@@ -22,7 +22,7 @@ ah.cleanup(user_name)
 # create a new assistant
 ah.create_assistant(user_name, "name", "instructions",
                     settings.chat_model,
-                    True,  # use tools
+                    True,  # use Function Calling
                     True,  # Use Code interpreter
                     [],  # Code interpreter file urls
                     False,  # use File Search
