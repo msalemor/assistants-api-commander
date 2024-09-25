@@ -3,4 +3,6 @@ __pycache__
 .vscode
 data/*
 .gitignore
-run.sh
+consoletest.py
+Makefile
+run.*

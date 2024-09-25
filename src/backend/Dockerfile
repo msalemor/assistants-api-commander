@@ -1,4 +1,5 @@
-FROM python:3.11
+# Alpine or slim working
+FROM python:3.11-alpine
 
 #
 WORKDIR /code
