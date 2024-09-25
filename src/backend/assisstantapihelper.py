@@ -118,7 +118,7 @@ class AssistantAPIHelper:
 
     def create_assistant(self, user_name: str,
                          name: str, instructions: str, model: str,
-                         use_tools: bool = True, use_ci: bool = False, code_files: list[str] = [],
+                         use_fc: bool = True, use_ci: bool = False, code_files: list[str] = [],
                          use_fs: bool = False, vs_name: str = 'Vector store',
                          search_files: list[str] = []) -> tuple[str, str, str]:
         """
@@ -134,7 +134,7 @@ class AssistantAPIHelper:
         tools = []
         tool_resources = {}
 
-        if use_tools:
+        if use_fc:
             tools = [
                 {
                     "type": "function",
